@@ -163,6 +163,39 @@ def build_customer_count_table(df: pd.DataFrame) -> pd.DataFrame:
     return customer_table
 
 
+def build_revenue_retention_table(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build cohort revenue retention table showing percentage of Month 0 revenue retained.
+
+    Args:
+        df: DataFrame with cohort data (from calculate_cohorts)
+
+    Returns:
+        DataFrame with cohort months as rows and period index as columns (percentages)
+    """
+    # Sum revenue per cohort per period
+    cohort_data = df.groupby(['cohort_month', 'cohort_index'])['order_amount'].sum().reset_index()
+    cohort_data.columns = ['cohort_month', 'cohort_index', 'revenue']
+
+    # Pivot to matrix form
+    cohort_pivot = cohort_data.pivot(index='cohort_month', columns='cohort_index', values='revenue')
+
+    # Get base revenue (month 0)
+    base_revenue = cohort_pivot[0]
+
+    # Calculate retention percentages
+    revenue_retention = cohort_pivot.divide(base_revenue, axis=0) * 100
+
+    # Round to 1 decimal place
+    revenue_retention = revenue_retention.round(1)
+
+    # Rename columns
+    revenue_retention.columns = [f'Month {i}' for i in revenue_retention.columns]
+    revenue_retention.index = revenue_retention.index.astype(str)
+
+    return revenue_retention
+
+
 def get_cohort_summary(df: pd.DataFrame) -> dict:
     """
     Get summary statistics about the cohort data.
@@ -213,6 +246,19 @@ def style_customer_table(df: pd.DataFrame):
         cmap='Purples',
         axis=None
     ).format('{:.0f}', na_rep='-')
+
+
+def style_revenue_retention_table(df: pd.DataFrame):
+    """
+    Apply heatmap styling to revenue retention table.
+    Green = high retention, Red = low retention
+    """
+    return df.style.background_gradient(
+        cmap='RdYlGn',
+        vmin=0,
+        vmax=100,
+        axis=None
+    ).format('{:.1f}%', na_rep='-')
 
 
 def export_to_excel(retention_df: pd.DataFrame, revenue_df: pd.DataFrame,
