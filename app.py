@@ -90,8 +90,13 @@ st.markdown("""
     /* Global styles */
     .stApp {
         font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: linear-gradient(180deg, var(--bg-secondary) 0%, #ffffff 100%);
+        background:
+            radial-gradient(ellipse at 0% 0%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+            radial-gradient(ellipse at 100% 0%, rgba(167, 139, 250, 0.06) 0%, transparent 40%),
+            radial-gradient(ellipse at 100% 100%, rgba(124, 58, 237, 0.05) 0%, transparent 50%),
+            linear-gradient(180deg, #f8fafc 0%, #f1f5f9 50%, #e8ecf2 100%);
         color: var(--text-primary);
+        min-height: 100vh;
     }
 
     /* Main container */
