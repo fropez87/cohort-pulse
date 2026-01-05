@@ -30,7 +30,7 @@ from cohort_analysis import (
 # Page configuration
 st.set_page_config(
     page_title="Cohort Pulse",
-    page_icon="",
+    page_icon="🟣",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
