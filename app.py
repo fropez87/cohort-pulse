@@ -6,6 +6,8 @@ A beautifully designed cohort analysis tool.
 import streamlit as st
 import pandas as pd
 import altair as alt
+import plotly.express as px
+import plotly.graph_objects as go
 from cohort_analysis import (
     load_and_validate_data,
     calculate_cohorts,
@@ -610,59 +612,77 @@ if uploaded_file is not None:
 
         with chart_col1:
             st.markdown('<p class="section-subtext" style="margin-bottom: 0.75rem;">Retention Curve</p>', unsafe_allow_html=True)
-            # Retention curve line chart
-            retention_chart = alt.Chart(retention_curve).mark_line(
-                point=alt.OverlayMarkDef(filled=True, size=70),
-                strokeWidth=3,
-                color='#7c3aed'
-            ).encode(
-                x=alt.X('month:Q', title='Month', axis=alt.Axis(tickMinStep=1, labelAngle=0)),
-                y=alt.Y('retention:Q', title='Retention %', scale=alt.Scale(domain=[0, 100])),
-                tooltip=[
-                    alt.Tooltip('month:Q', title='Month'),
-                    alt.Tooltip('retention:Q', title='Retention %', format='.1f')
-                ]
-            ).properties(
-                height=300
-            ).configure_axis(
-                labelFontSize=11,
-                titleFontSize=12,
-                titleFontWeight=600,
-                labelColor='#475569',
-                titleColor='#0f172a',
-                gridColor='#f1f5f9'
-            ).configure_view(
-                strokeWidth=0
+            # Interactive Plotly retention curve
+            fig_retention = go.Figure()
+            fig_retention.add_trace(go.Scatter(
+                x=retention_curve['month'],
+                y=retention_curve['retention'],
+                mode='lines+markers',
+                name='Retention',
+                line=dict(color='#7c3aed', width=3),
+                marker=dict(size=10, color='#7c3aed'),
+                hovertemplate='<b>Month %{x}</b><br>Retention: %{y:.1f}%<extra></extra>'
+            ))
+            fig_retention.update_layout(
+                height=300,
+                margin=dict(l=20, r=20, t=20, b=40),
+                xaxis=dict(
+                    title='Month',
+                    tickmode='linear',
+                    dtick=1,
+                    gridcolor='#f1f5f9',
+                    title_font=dict(size=12, color='#0f172a'),
+                    tickfont=dict(size=11, color='#475569')
+                ),
+                yaxis=dict(
+                    title='Retention %',
+                    range=[0, 105],
+                    gridcolor='#f1f5f9',
+                    title_font=dict(size=12, color='#0f172a'),
+                    tickfont=dict(size=11, color='#475569')
+                ),
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                hovermode='x unified',
+                showlegend=False
             )
-            st.altair_chart(retention_chart, use_container_width=True)
+            st.plotly_chart(fig_retention, use_container_width=True, config={'displayModeBar': True, 'displaylogo': False})
 
         with chart_col2:
             st.markdown('<p class="section-subtext" style="margin-bottom: 0.75rem;">New Customers by Cohort</p>', unsafe_allow_html=True)
-            # Cohort size bar chart
-            cohort_chart = alt.Chart(cohort_sizes).mark_bar(
-                color='#7c3aed',
-                cornerRadiusTopLeft=6,
-                cornerRadiusTopRight=6
-            ).encode(
-                x=alt.X('cohort_month:N', title='Cohort', axis=alt.Axis(labelAngle=-45)),
-                y=alt.Y('new_customers:Q', title='New Customers'),
-                tooltip=[
-                    alt.Tooltip('cohort_month:N', title='Cohort'),
-                    alt.Tooltip('new_customers:Q', title='New Customers')
-                ]
-            ).properties(
-                height=300
-            ).configure_axis(
-                labelFontSize=11,
-                titleFontSize=12,
-                titleFontWeight=600,
-                labelColor='#475569',
-                titleColor='#0f172a',
-                gridColor='#f1f5f9'
-            ).configure_view(
-                strokeWidth=0
+            # Interactive Plotly cohort size bar chart
+            fig_cohort = go.Figure()
+            fig_cohort.add_trace(go.Bar(
+                x=cohort_sizes['cohort_month'],
+                y=cohort_sizes['new_customers'],
+                marker=dict(
+                    color='#7c3aed',
+                    line=dict(width=0)
+                ),
+                hovertemplate='<b>%{x}</b><br>New Customers: %{y:,}<extra></extra>'
+            ))
+            fig_cohort.update_layout(
+                height=300,
+                margin=dict(l=20, r=20, t=20, b=40),
+                xaxis=dict(
+                    title='Cohort',
+                    tickangle=-45,
+                    gridcolor='#f1f5f9',
+                    title_font=dict(size=12, color='#0f172a'),
+                    tickfont=dict(size=11, color='#475569')
+                ),
+                yaxis=dict(
+                    title='New Customers',
+                    gridcolor='#f1f5f9',
+                    title_font=dict(size=12, color='#0f172a'),
+                    tickfont=dict(size=11, color='#475569')
+                ),
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                showlegend=False,
+                bargap=0.2
             )
-            st.altair_chart(cohort_chart, use_container_width=True)
+            st.plotly_chart(fig_cohort, use_container_width=True, config={'displayModeBar': True, 'displaylogo': False})
 
         st.markdown("---")
 
