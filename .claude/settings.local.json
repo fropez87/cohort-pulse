@@ -4,7 +4,12 @@
       "Bash(python -m pip install:*)",
       "Bash(where:*)",
       "Bash(python -m streamlit:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)"
     ]
   }
 }

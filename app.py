@@ -659,4 +659,11 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown('<p class="footer">Cohort Pulse</p>', unsafe_allow_html=True)
+st.markdown("""
+<div style="text-align: center; padding: 1rem 0;">
+    <p style="color: #9ca3af; font-size: 0.75rem; margin: 0 0 0.5rem 0;">
+        For demonstration purposes only. Your data is processed locally and is not stored on our servers.
+    </p>
+    <p class="footer" style="margin: 0;">Cohort Pulse</p>
+</div>
+""", unsafe_allow_html=True)
