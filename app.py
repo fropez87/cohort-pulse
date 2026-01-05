@@ -31,112 +31,130 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Cohort Pulse Logo SVG
+# Cohort Pulse Logo SVG - modern gradient style
 LOGO_SVG = """
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="40" height="40" rx="10" fill="#6366F1"/>
-  <circle cx="20" cy="20" r="10" stroke="white" stroke-width="2" fill="none" opacity="0.3"/>
-  <circle cx="20" cy="20" r="6" stroke="white" stroke-width="2" fill="none" opacity="0.5"/>
-  <circle cx="20" cy="20" r="3" fill="white"/>
+<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#5b21b6"/>
+    </linearGradient>
+  </defs>
+  <rect width="44" height="44" rx="12" fill="url(#logoGrad)"/>
+  <circle cx="22" cy="22" r="12" stroke="white" stroke-width="2" fill="none" opacity="0.25"/>
+  <circle cx="22" cy="22" r="7" stroke="white" stroke-width="2" fill="none" opacity="0.5"/>
+  <circle cx="22" cy="22" r="3" fill="white"/>
 </svg>
 """
 
-# Premium Apple/Airbnb inspired CSS
+# Premium modern CSS with Plus Jakarta Sans
 st.markdown("""
 <style>
-    /* Import SF Pro-like font */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    /* Import Plus Jakarta Sans - modern geometric font */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
     /* Hide Streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* Root variables */
+    /* Root variables - refined dark accents */
     :root {
-        --text-primary: #1a1a1a;
-        --text-secondary: #6b7280;
-        --text-tertiary: #9ca3af;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-tertiary: #94a3b8;
         --bg-primary: #ffffff;
-        --bg-secondary: #fafafa;
-        --bg-tertiary: #f5f5f7;
-        --border-color: #e5e5e5;
-        --accent: #6366f1;
-        --accent-hover: #4f46e5;
-        --success: #10b981;
-        --warning: #f59e0b;
-        --radius-sm: 8px;
-        --radius-md: 12px;
-        --radius-lg: 16px;
-        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        --bg-secondary: #f8fafc;
+        --bg-tertiary: #f1f5f9;
+        --border-color: #e2e8f0;
+        --accent: #7c3aed;
+        --accent-light: #a78bfa;
+        --accent-bg: #f5f3ff;
+        --success: #059669;
+        --success-bg: #ecfdf5;
+        --warning: #d97706;
+        --warning-bg: #fffbeb;
+        --radius-sm: 10px;
+        --radius-md: 14px;
+        --radius-lg: 20px;
+        --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+        --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+        --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06);
+        --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* Global styles */
     .stApp {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-        background: var(--bg-secondary);
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: linear-gradient(180deg, var(--bg-secondary) 0%, #ffffff 100%);
         color: var(--text-primary);
     }
 
     /* Main container */
     .block-container {
-        padding: 3rem 2rem 4rem !important;
-        max-width: 1100px !important;
+        padding: 3rem 2.5rem 4rem !important;
+        max-width: 1140px !important;
     }
 
     /* Typography */
     h1, h2, h3, h4, h5, h6 {
-        font-weight: 600 !important;
-        letter-spacing: -0.025em !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.03em !important;
         color: var(--text-primary) !important;
     }
 
     p, span, label {
         color: var(--text-secondary);
+        line-height: 1.6;
     }
 
     /* Logo and header area */
     .logo-container {
         display: flex;
         align-items: center;
-        gap: 14px;
-        margin-bottom: 8px;
+        gap: 16px;
+        margin-bottom: 12px;
     }
 
     .logo-text {
-        font-size: 1.75rem;
-        font-weight: 700;
-        letter-spacing: -0.03em;
+        font-size: 1.875rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
         color: var(--text-primary);
+        background: linear-gradient(135deg, var(--accent) 0%, #5b21b6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .tagline {
-        font-size: 1.125rem;
+        font-size: 1.1875rem;
         color: var(--text-secondary);
         font-weight: 400;
         margin-bottom: 2.5rem;
-        line-height: 1.5;
+        line-height: 1.6;
+        max-width: 520px;
     }
 
-    /* File uploader - clean minimal style */
+    /* File uploader - modern glass style */
     [data-testid="stFileUploader"] {
         background: var(--bg-primary);
-        border: 1.5px dashed var(--border-color);
+        border: 2px dashed var(--border-color);
         border-radius: var(--radius-lg);
-        padding: 2.5rem 2rem;
+        padding: 3rem 2rem;
         transition: var(--transition);
+        position: relative;
     }
 
     [data-testid="stFileUploader"]:hover {
         border-color: var(--accent);
-        background: #fafafe;
+        background: var(--accent-bg);
+        border-style: solid;
     }
 
     [data-testid="stFileUploader"] label {
-        font-size: 0.9375rem !important;
-        font-weight: 500 !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
         color: var(--text-primary) !important;
     }
 
@@ -144,51 +162,70 @@ st.markdown("""
         color: var(--text-tertiary) !important;
     }
 
-    /* Metric cards - glass morphism inspired */
+    /* Metric cards - elevated glass style */
     [data-testid="stMetric"] {
         background: var(--bg-primary);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        padding: 1.5rem 1.25rem;
+        padding: 1.75rem 1.5rem;
         box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    [data-testid="stMetric"]::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 100%);
+        opacity: 0;
         transition: var(--transition);
     }
 
     [data-testid="stMetric"]:hover {
         box-shadow: var(--shadow-md);
-        transform: translateY(-2px);
+        transform: translateY(-3px);
+        border-color: var(--accent-light);
+    }
+
+    [data-testid="stMetric"]:hover::before {
+        opacity: 1;
     }
 
     [data-testid="stMetricLabel"] {
-        font-size: 0.8125rem !important;
-        font-weight: 500 !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
         color: var(--text-tertiary) !important;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
-        margin-bottom: 0.25rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.5rem;
     }
 
     [data-testid="stMetricValue"] {
-        font-size: 1.875rem !important;
-        font-weight: 700 !important;
+        font-size: 2rem !important;
+        font-weight: 800 !important;
         color: var(--text-primary) !important;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.03em;
     }
 
-    /* Tabs - pill style */
+    /* Tabs - modern segmented control */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 4px;
+        gap: 6px;
         background: var(--bg-tertiary);
-        padding: 4px;
+        padding: 6px;
         border-radius: var(--radius-md);
-        border: none;
+        border: 1px solid var(--border-color);
     }
 
     .stTabs [data-baseweb="tab"] {
         border-radius: var(--radius-sm);
-        font-weight: 500;
+        font-weight: 600;
         font-size: 0.875rem;
-        padding: 0.625rem 1.25rem;
+        padding: 0.75rem 1.5rem;
         color: var(--text-secondary);
         background: transparent;
         border: none;
@@ -197,13 +234,14 @@ st.markdown("""
 
     .stTabs [data-baseweb="tab"]:hover {
         color: var(--text-primary);
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.7);
     }
 
     .stTabs [aria-selected="true"] {
         background: var(--bg-primary) !important;
-        color: var(--text-primary) !important;
-        box-shadow: var(--shadow-sm);
+        color: var(--accent) !important;
+        box-shadow: var(--shadow-md);
+        font-weight: 700;
     }
 
     /* Dataframe container */
@@ -212,35 +250,35 @@ st.markdown("""
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
         overflow: hidden;
+        box-shadow: var(--shadow-sm);
     }
 
-    /* Download buttons - minimal style */
+    /* Download buttons - gradient accent style */
     .stDownloadButton > button {
-        background: var(--text-primary) !important;
+        background: linear-gradient(135deg, var(--accent) 0%, #5b21b6 100%) !important;
         color: white !important;
         border: none !important;
         border-radius: var(--radius-sm) !important;
-        padding: 0.75rem 1.5rem !important;
-        font-weight: 500 !important;
+        padding: 0.875rem 1.75rem !important;
+        font-weight: 600 !important;
         font-size: 0.875rem !important;
         transition: var(--transition) !important;
-        box-shadow: none !important;
+        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35) !important;
     }
 
     .stDownloadButton > button:hover {
-        background: #333 !important;
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-md) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45) !important;
     }
 
-    /* Expander - clean style */
+    /* Expander - modern style */
     .streamlit-expanderHeader {
-        font-weight: 500 !important;
+        font-weight: 600 !important;
         font-size: 0.9375rem !important;
         color: var(--text-primary) !important;
         background: var(--bg-tertiary) !important;
         border-radius: var(--radius-sm) !important;
-        padding: 0.875rem 1rem !important;
+        padding: 1rem 1.25rem !important;
         border: none !important;
     }
 
@@ -248,14 +286,16 @@ st.markdown("""
         border: 1px solid var(--border-color) !important;
         border-radius: var(--radius-md) !important;
         overflow: hidden;
+        box-shadow: var(--shadow-sm);
     }
 
     /* Success message */
     .stSuccess {
-        background: #ecfdf5 !important;
+        background: var(--success-bg) !important;
         border: 1px solid #a7f3d0 !important;
         border-radius: var(--radius-sm) !important;
-        color: #065f46 !important;
+        color: var(--success) !important;
+        font-weight: 500;
     }
 
     /* Error message */
@@ -263,23 +303,24 @@ st.markdown("""
         background: #fef2f2 !important;
         border: 1px solid #fecaca !important;
         border-radius: var(--radius-sm) !important;
-        color: #991b1b !important;
+        color: #dc2626 !important;
+        font-weight: 500;
     }
 
     /* Divider */
     hr {
-        margin: 2.5rem 0 !important;
+        margin: 3rem 0 !important;
         border: none !important;
         border-top: 1px solid var(--border-color) !important;
     }
 
     /* Section headers */
     .section-header {
-        font-size: 1.25rem;
-        font-weight: 600;
+        font-size: 1.375rem;
+        font-weight: 700;
         color: var(--text-primary);
-        margin-bottom: 1.25rem;
-        letter-spacing: -0.02em;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.03em;
     }
 
     .section-subtext {
@@ -289,42 +330,45 @@ st.markdown("""
         line-height: 1.6;
     }
 
-    /* Column chips */
+    /* Column chips - modern pill style */
     .column-chip {
         display: inline-flex;
         align-items: center;
-        background: var(--bg-tertiary);
-        padding: 0.5rem 0.875rem;
-        border-radius: 6px;
-        font-family: 'SF Mono', 'Fira Code', monospace;
+        background: var(--accent-bg);
+        padding: 0.625rem 1rem;
+        border-radius: 100px;
+        font-family: 'JetBrains Mono', 'SF Mono', monospace;
         font-size: 0.8125rem;
-        color: var(--text-primary);
-        font-weight: 500;
-        margin-right: 0.5rem;
-        margin-bottom: 0.5rem;
+        color: var(--accent);
+        font-weight: 600;
+        margin-right: 0.625rem;
+        margin-bottom: 0.625rem;
+        border: 1px solid rgba(124, 58, 237, 0.15);
     }
 
     /* Info card */
     .info-card {
-        background: var(--bg-primary);
+        background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
         border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+        padding: 2rem;
         margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
     }
 
     .info-card-title {
-        font-size: 0.875rem;
-        font-weight: 600;
+        font-size: 0.9375rem;
+        font-weight: 700;
         color: var(--accent);
-        margin-bottom: 0.375rem;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.01em;
     }
 
     .info-card-text {
-        font-size: 0.9375rem;
+        font-size: 1rem;
         color: var(--text-secondary);
         margin: 0;
-        line-height: 1.5;
+        line-height: 1.65;
     }
 
     /* Date range badge */
@@ -332,56 +376,70 @@ st.markdown("""
         display: inline-flex;
         align-items: center;
         background: var(--bg-tertiary);
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        border-radius: 100px;
         font-size: 0.8125rem;
+        font-weight: 500;
         color: var(--text-secondary);
-        margin-top: 1rem;
+        margin-top: 1.25rem;
+        border: 1px solid var(--border-color);
     }
 
-    /* Insight cards */
+    /* Insight cards - modern elevated style */
     .insight-card {
         background: var(--bg-primary);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        padding: 1.25rem;
-        margin-bottom: 0.75rem;
-        border-left: 3px solid var(--accent);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--accent);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+    }
+
+    .insight-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateX(4px);
     }
 
     .insight-card.positive {
-        border-left-color: #10b981;
+        border-left-color: var(--success);
+        background: linear-gradient(90deg, var(--success-bg) 0%, var(--bg-primary) 30%);
     }
 
     .insight-card.warning {
-        border-left-color: #f59e0b;
+        border-left-color: var(--warning);
+        background: linear-gradient(90deg, var(--warning-bg) 0%, var(--bg-primary) 30%);
     }
 
     .insight-card.info {
-        border-left-color: #6366f1;
+        border-left-color: var(--accent);
+        background: linear-gradient(90deg, var(--accent-bg) 0%, var(--bg-primary) 30%);
     }
 
     .insight-title {
-        font-size: 0.875rem;
-        font-weight: 600;
+        font-size: 0.9375rem;
+        font-weight: 700;
         color: var(--text-primary);
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.375rem;
+        letter-spacing: -0.01em;
     }
 
     .insight-text {
-        font-size: 0.875rem;
+        font-size: 0.9375rem;
         color: var(--text-secondary);
         margin: 0;
-        line-height: 1.5;
+        line-height: 1.6;
     }
 
     /* Chart container */
     .chart-container {
         background: var(--bg-primary);
         border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+        padding: 1.75rem;
         margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
     }
 
     /* Footer */
@@ -390,6 +448,7 @@ st.markdown("""
         padding: 2rem 0 1rem;
         color: var(--text-tertiary);
         font-size: 0.8125rem;
+        font-weight: 500;
     }
 
     /* Spinner */
@@ -405,6 +464,32 @@ st.markdown("""
     /* Altair chart styling */
     .vega-embed {
         width: 100% !important;
+    }
+
+    /* Selection and focus states */
+    ::selection {
+        background: var(--accent-bg);
+        color: var(--accent);
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--text-tertiary);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -510,9 +595,9 @@ if uploaded_file is not None:
             st.markdown('<p class="section-subtext" style="margin-bottom: 0.75rem;">Retention Curve</p>', unsafe_allow_html=True)
             # Retention curve line chart
             retention_chart = alt.Chart(retention_curve).mark_line(
-                point=alt.OverlayMarkDef(filled=True, size=60),
-                strokeWidth=2.5,
-                color='#6366f1'
+                point=alt.OverlayMarkDef(filled=True, size=70),
+                strokeWidth=3,
+                color='#7c3aed'
             ).encode(
                 x=alt.X('month:Q', title='Month', axis=alt.Axis(tickMinStep=1, labelAngle=0)),
                 y=alt.Y('retention:Q', title='Retention %', scale=alt.Scale(domain=[0, 100])),
@@ -521,13 +606,14 @@ if uploaded_file is not None:
                     alt.Tooltip('retention:Q', title='Retention %', format='.1f')
                 ]
             ).properties(
-                height=280
+                height=300
             ).configure_axis(
                 labelFontSize=11,
                 titleFontSize=12,
-                labelColor='#6b7280',
-                titleColor='#1a1a1a',
-                gridColor='#f0f0f0'
+                titleFontWeight=600,
+                labelColor='#475569',
+                titleColor='#0f172a',
+                gridColor='#f1f5f9'
             ).configure_view(
                 strokeWidth=0
             )
@@ -537,9 +623,9 @@ if uploaded_file is not None:
             st.markdown('<p class="section-subtext" style="margin-bottom: 0.75rem;">New Customers by Cohort</p>', unsafe_allow_html=True)
             # Cohort size bar chart
             cohort_chart = alt.Chart(cohort_sizes).mark_bar(
-                color='#6366f1',
-                cornerRadiusTopLeft=4,
-                cornerRadiusTopRight=4
+                color='#7c3aed',
+                cornerRadiusTopLeft=6,
+                cornerRadiusTopRight=6
             ).encode(
                 x=alt.X('cohort_month:N', title='Cohort', axis=alt.Axis(labelAngle=-45)),
                 y=alt.Y('new_customers:Q', title='New Customers'),
@@ -548,13 +634,14 @@ if uploaded_file is not None:
                     alt.Tooltip('new_customers:Q', title='New Customers')
                 ]
             ).properties(
-                height=280
+                height=300
             ).configure_axis(
                 labelFontSize=11,
                 titleFontSize=12,
-                labelColor='#6b7280',
-                titleColor='#1a1a1a',
-                gridColor='#f0f0f0'
+                titleFontWeight=600,
+                labelColor='#475569',
+                titleColor='#0f172a',
+                gridColor='#f1f5f9'
             ).configure_view(
                 strokeWidth=0
             )
