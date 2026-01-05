@@ -262,7 +262,7 @@ def style_revenue_retention_table(df: pd.DataFrame):
 
 
 def export_to_excel(retention_df: pd.DataFrame, revenue_df: pd.DataFrame,
-                    customer_df: pd.DataFrame) -> bytes:
+                    customer_df: pd.DataFrame, revenue_retention_df: pd.DataFrame = None) -> bytes:
     """
     Export all cohort tables to a single Excel file with multiple sheets.
 
@@ -271,9 +271,11 @@ def export_to_excel(retention_df: pd.DataFrame, revenue_df: pd.DataFrame,
     """
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        retention_df.to_excel(writer, sheet_name='Retention Rate')
-        revenue_df.to_excel(writer, sheet_name='Revenue')
+        retention_df.to_excel(writer, sheet_name='Customer Retention %')
         customer_df.to_excel(writer, sheet_name='Customer Count')
+        if revenue_retention_df is not None:
+            revenue_retention_df.to_excel(writer, sheet_name='Revenue Retention %')
+        revenue_df.to_excel(writer, sheet_name='Revenue $')
     output.seek(0)
     return output.getvalue()
 
@@ -359,322 +361,113 @@ def get_retention_curve(df: pd.DataFrame) -> pd.DataFrame:
     return avg_retention
 
 
-def get_revenue_per_cohort(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Calculate total and average revenue per cohort.
-
-    Args:
-        df: DataFrame with cohort data
-
-    Returns:
-        DataFrame with cohort revenue metrics
-    """
-    cohort_revenue = df.groupby('cohort_month').agg({
-        'order_amount': 'sum',
-        'customer_id': 'nunique'
-    }).reset_index()
-    cohort_revenue.columns = ['cohort_month', 'total_revenue', 'customers']
-    cohort_revenue['revenue_per_customer'] = cohort_revenue['total_revenue'] / cohort_revenue['customers']
-    cohort_revenue['cohort_month'] = cohort_revenue['cohort_month'].astype(str)
-    return cohort_revenue
-
-
-def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame) -> list:
+def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
+                      metrics: dict = None, cohort_sizes: pd.DataFrame = None) -> list:
     """
     Generate automatic insights from the cohort data.
 
     Args:
         df: DataFrame with cohort data
         retention_table: Retention table DataFrame
+        metrics: Pre-calculated metrics (optional, avoids redundant calculation)
+        cohort_sizes: Pre-calculated cohort sizes (optional)
 
     Returns:
-        List of insight strings
+        List of insight dictionaries
     """
     insights = []
 
-    # Get metrics
-    metrics = get_advanced_metrics(df)
-    cohort_sizes = get_cohort_sizes(df)
+    try:
+        # Use provided metrics or calculate if not provided
+        if metrics is None:
+            metrics = get_advanced_metrics(df)
+        if cohort_sizes is None:
+            cohort_sizes = get_cohort_sizes(df)
 
-    # Insight 1: Repeat purchase rate
-    if metrics['repeat_rate'] >= 30:
-        insights.append({
-            'type': 'positive',
-            'title': 'Strong repeat purchases',
-            'text': f"{metrics['repeat_rate']:.1f}% of customers have made more than one purchase."
-        })
-    elif metrics['repeat_rate'] < 15:
-        insights.append({
-            'type': 'warning',
-            'title': 'Low repeat rate',
-            'text': f"Only {metrics['repeat_rate']:.1f}% of customers return. Consider retention strategies."
-        })
-
-    # Insight 2: Best performing cohort (Month 1 retention)
-    if 'Month 1' in retention_table.columns:
-        month1_retention = retention_table['Month 1'].dropna()
-        if len(month1_retention) > 0:
-            best_cohort = month1_retention.idxmax()
-            best_retention = month1_retention.max()
-            avg_retention = month1_retention.mean()
-
-            if best_retention > avg_retention * 1.2:  # 20% above average
-                insights.append({
-                    'type': 'positive',
-                    'title': 'Top performing cohort',
-                    'text': f"{best_cohort} cohort has {best_retention:.1f}% Month 1 retention, {((best_retention/avg_retention)-1)*100:.0f}% above average."
-                })
-
-            # Worst cohort
-            worst_cohort = month1_retention.idxmin()
-            worst_retention = month1_retention.min()
-            if worst_retention < avg_retention * 0.8:  # 20% below average
-                insights.append({
-                    'type': 'warning',
-                    'title': 'Underperforming cohort',
-                    'text': f"{worst_cohort} cohort has only {worst_retention:.1f}% Month 1 retention."
-                })
-
-    # Insight 3: Cohort size trend
-    if len(cohort_sizes) >= 3:
-        recent_avg = cohort_sizes['new_customers'].tail(3).mean()
-        older_avg = cohort_sizes['new_customers'].head(3).mean()
-
-        if recent_avg > older_avg * 1.2:
-            growth_pct = ((recent_avg / older_avg) - 1) * 100
+        # Insight 1: Repeat purchase rate
+        if metrics['repeat_rate'] >= 30:
             insights.append({
                 'type': 'positive',
-                'title': 'Growing customer acquisition',
-                'text': f"Recent cohorts are {growth_pct:.0f}% larger than earlier ones."
+                'title': 'Strong repeat purchases',
+                'text': f"{metrics['repeat_rate']:.1f}% of customers have made more than one purchase."
             })
-        elif recent_avg < older_avg * 0.8:
-            decline_pct = (1 - (recent_avg / older_avg)) * 100
+        elif metrics['repeat_rate'] < 15:
             insights.append({
                 'type': 'warning',
-                'title': 'Declining acquisition',
-                'text': f"Recent cohorts are {decline_pct:.0f}% smaller than earlier ones."
+                'title': 'Low repeat rate',
+                'text': f"Only {metrics['repeat_rate']:.1f}% of customers return. Consider retention strategies."
             })
 
-    # Insight 4: LTV insight
-    if metrics['ltv'] > 0:
-        insights.append({
-            'type': 'info',
-            'title': 'Customer lifetime value',
-            'text': f"Average customer generates ${metrics['ltv']:.2f} in revenue over their lifetime."
-        })
+        # Insight 2: Best performing cohort (Month 1 retention)
+        if 'Month 1' in retention_table.columns:
+            month1_retention = retention_table['Month 1'].dropna()
+            if len(month1_retention) > 1:  # Need at least 2 cohorts to compare
+                best_cohort = month1_retention.idxmax()
+                best_retention = month1_retention.max()
+                avg_retention = month1_retention.mean()
 
-    # Insight 5: Month 2+ retention (stickiness)
-    if 'Month 2' in retention_table.columns:
-        month2_avg = retention_table['Month 2'].dropna().mean()
-        if month2_avg >= 20:
+                # Prevent division by zero
+                if avg_retention > 0 and best_retention > avg_retention * 1.2:
+                    insights.append({
+                        'type': 'positive',
+                        'title': 'Top performing cohort',
+                        'text': f"{best_cohort} cohort has {best_retention:.1f}% Month 1 retention, {((best_retention/avg_retention)-1)*100:.0f}% above average."
+                    })
+
+                # Worst cohort
+                worst_cohort = month1_retention.idxmin()
+                worst_retention = month1_retention.min()
+                if avg_retention > 0 and worst_retention < avg_retention * 0.8:
+                    insights.append({
+                        'type': 'warning',
+                        'title': 'Underperforming cohort',
+                        'text': f"{worst_cohort} cohort has only {worst_retention:.1f}% Month 1 retention."
+                    })
+
+        # Insight 3: Cohort size trend
+        if len(cohort_sizes) >= 6:  # Need enough cohorts to compare trends
+            recent_avg = cohort_sizes['new_customers'].tail(3).mean()
+            older_avg = cohort_sizes['new_customers'].head(3).mean()
+
+            # Prevent division by zero
+            if older_avg > 0:
+                if recent_avg > older_avg * 1.2:
+                    growth_pct = ((recent_avg / older_avg) - 1) * 100
+                    insights.append({
+                        'type': 'positive',
+                        'title': 'Growing customer acquisition',
+                        'text': f"Recent cohorts are {growth_pct:.0f}% larger than earlier ones."
+                    })
+                elif recent_avg < older_avg * 0.8:
+                    decline_pct = (1 - (recent_avg / older_avg)) * 100
+                    insights.append({
+                        'type': 'warning',
+                        'title': 'Declining acquisition',
+                        'text': f"Recent cohorts are {decline_pct:.0f}% smaller than earlier ones."
+                    })
+
+        # Insight 4: LTV insight
+        if metrics['ltv'] > 0:
             insights.append({
-                'type': 'positive',
-                'title': 'Good long-term retention',
-                'text': f"Average {month2_avg:.1f}% of customers are still active by Month 2."
+                'type': 'info',
+                'title': 'Customer lifetime value',
+                'text': f"Average customer generates ${metrics['ltv']:.2f} in revenue over their lifetime."
             })
+
+        # Insight 5: Month 2+ retention (stickiness)
+        if 'Month 2' in retention_table.columns:
+            month2_data = retention_table['Month 2'].dropna()
+            if len(month2_data) > 0:
+                month2_avg = month2_data.mean()
+                if month2_avg >= 20:
+                    insights.append({
+                        'type': 'positive',
+                        'title': 'Good long-term retention',
+                        'text': f"Average {month2_avg:.1f}% of customers are still active by Month 2."
+                    })
+
+    except Exception:
+        # If insight generation fails, return empty list rather than crashing
+        pass
 
     return insights[:5]  # Return top 5 insights
-
-
-def get_frequency_segments(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Segment customers by purchase frequency and calculate retention metrics.
-
-    Args:
-        df: DataFrame with cohort data (from calculate_cohorts)
-
-    Returns:
-        DataFrame with frequency segments and their metrics
-    """
-    # Count orders per customer
-    customer_orders = df.groupby('customer_id').agg({
-        'order_date': 'count',
-        'order_amount': 'sum',
-        'cohort_month': 'first'
-    }).reset_index()
-    customer_orders.columns = ['customer_id', 'order_count', 'total_spent', 'cohort_month']
-
-    # Create frequency segments
-    def assign_segment(count):
-        if count == 1:
-            return '1 order'
-        elif count == 2:
-            return '2 orders'
-        elif count <= 4:
-            return '3-4 orders'
-        else:
-            return '5+ orders'
-
-    customer_orders['frequency_segment'] = customer_orders['order_count'].apply(assign_segment)
-
-    # Calculate metrics per segment
-    segment_metrics = customer_orders.groupby('frequency_segment').agg({
-        'customer_id': 'count',
-        'total_spent': ['sum', 'mean'],
-        'order_count': 'mean'
-    }).reset_index()
-    segment_metrics.columns = ['segment', 'customers', 'total_revenue', 'avg_revenue', 'avg_orders']
-
-    # Calculate percentage
-    total_customers = segment_metrics['customers'].sum()
-    segment_metrics['customer_pct'] = (segment_metrics['customers'] / total_customers * 100).round(1)
-
-    # Sort by order frequency
-    segment_order = {'1 order': 0, '2 orders': 1, '3-4 orders': 2, '5+ orders': 3}
-    segment_metrics['sort_order'] = segment_metrics['segment'].map(segment_order)
-    segment_metrics = segment_metrics.sort_values('sort_order').drop('sort_order', axis=1)
-
-    return segment_metrics
-
-
-def get_revenue_segments(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Segment customers by total revenue and calculate retention metrics.
-
-    Args:
-        df: DataFrame with cohort data (from calculate_cohorts)
-
-    Returns:
-        DataFrame with revenue segments and their metrics
-    """
-    # Calculate total spent per customer
-    customer_revenue = df.groupby('customer_id').agg({
-        'order_amount': 'sum',
-        'order_date': 'count',
-        'cohort_month': 'first'
-    }).reset_index()
-    customer_revenue.columns = ['customer_id', 'total_spent', 'order_count', 'cohort_month']
-
-    # Create revenue quartiles
-    customer_revenue['revenue_quartile'] = pd.qcut(
-        customer_revenue['total_spent'],
-        q=4,
-        labels=['Bottom 25%', 'Lower-Mid 25%', 'Upper-Mid 25%', 'Top 25%'],
-        duplicates='drop'
-    )
-
-    # Calculate metrics per quartile
-    quartile_metrics = customer_revenue.groupby('revenue_quartile', observed=True).agg({
-        'customer_id': 'count',
-        'total_spent': ['sum', 'mean', 'min', 'max'],
-        'order_count': 'mean'
-    }).reset_index()
-    quartile_metrics.columns = ['segment', 'customers', 'total_revenue', 'avg_revenue', 'min_revenue', 'max_revenue', 'avg_orders']
-
-    # Calculate percentage of total revenue
-    total_revenue = quartile_metrics['total_revenue'].sum()
-    quartile_metrics['revenue_pct'] = (quartile_metrics['total_revenue'] / total_revenue * 100).round(1)
-
-    return quartile_metrics
-
-
-def get_retention_by_frequency(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Calculate retention rates segmented by purchase frequency.
-
-    Args:
-        df: DataFrame with cohort data (from calculate_cohorts)
-
-    Returns:
-        DataFrame with retention by frequency segment
-    """
-    # Get customer order counts
-    customer_orders = df.groupby('customer_id')['order_date'].count().reset_index()
-    customer_orders.columns = ['customer_id', 'order_count']
-
-    # Assign frequency segment
-    def assign_segment(count):
-        if count == 1:
-            return '1 order'
-        elif count == 2:
-            return '2 orders'
-        elif count <= 4:
-            return '3-4 orders'
-        else:
-            return '5+ orders'
-
-    customer_orders['frequency_segment'] = customer_orders['order_count'].apply(assign_segment)
-
-    # Merge back to main df
-    df_with_freq = df.merge(customer_orders[['customer_id', 'frequency_segment']], on='customer_id')
-
-    # Calculate retention by segment and cohort_index
-    retention_data = []
-    for segment in ['1 order', '2 orders', '3-4 orders', '5+ orders']:
-        segment_df = df_with_freq[df_with_freq['frequency_segment'] == segment]
-        if len(segment_df) == 0:
-            continue
-
-        # Get unique customers per cohort_index
-        cohort_retention = segment_df.groupby('cohort_index')['customer_id'].nunique().reset_index()
-        cohort_retention.columns = ['month', 'customers']
-
-        # Get base (month 0) customers
-        base_customers = cohort_retention[cohort_retention['month'] == 0]['customers'].values
-        if len(base_customers) > 0:
-            base = base_customers[0]
-            cohort_retention['retention'] = (cohort_retention['customers'] / base * 100).round(1)
-            cohort_retention['segment'] = segment
-            retention_data.append(cohort_retention)
-
-    if retention_data:
-        return pd.concat(retention_data, ignore_index=True)
-    return pd.DataFrame()
-
-
-def get_retention_by_revenue_segment(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Calculate retention rates segmented by customer revenue quartile.
-
-    Args:
-        df: DataFrame with cohort data (from calculate_cohorts)
-
-    Returns:
-        DataFrame with retention by revenue segment
-    """
-    # Calculate total spent per customer
-    customer_revenue = df.groupby('customer_id')['order_amount'].sum().reset_index()
-    customer_revenue.columns = ['customer_id', 'total_spent']
-
-    # Create revenue quartiles
-    try:
-        customer_revenue['revenue_segment'] = pd.qcut(
-            customer_revenue['total_spent'],
-            q=4,
-            labels=['Low Value', 'Mid-Low', 'Mid-High', 'High Value'],
-            duplicates='drop'
-        )
-    except ValueError:
-        # If we can't create 4 quartiles, create fewer
-        customer_revenue['revenue_segment'] = pd.qcut(
-            customer_revenue['total_spent'],
-            q=2,
-            labels=['Lower Half', 'Upper Half'],
-            duplicates='drop'
-        )
-
-    # Merge back to main df
-    df_with_rev = df.merge(customer_revenue[['customer_id', 'revenue_segment']], on='customer_id')
-
-    # Calculate retention by segment and cohort_index
-    retention_data = []
-    for segment in df_with_rev['revenue_segment'].unique():
-        segment_df = df_with_rev[df_with_rev['revenue_segment'] == segment]
-        if len(segment_df) == 0:
-            continue
-
-        # Get unique customers per cohort_index
-        cohort_retention = segment_df.groupby('cohort_index')['customer_id'].nunique().reset_index()
-        cohort_retention.columns = ['month', 'customers']
-
-        # Get base (month 0) customers
-        base_customers = cohort_retention[cohort_retention['month'] == 0]['customers'].values
-        if len(base_customers) > 0:
-            base = base_customers[0]
-            cohort_retention['retention'] = (cohort_retention['customers'] / base * 100).round(1)
-            cohort_retention['segment'] = str(segment)
-            retention_data.append(cohort_retention)
-
-    if retention_data:
-        return pd.concat(retention_data, ignore_index=True)
-    return pd.DataFrame()

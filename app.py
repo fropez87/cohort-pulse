@@ -557,7 +557,8 @@ if uploaded_file is not None:
             advanced_metrics = get_advanced_metrics(df_cohorts)
             cohort_sizes = get_cohort_sizes(df_cohorts)
             retention_curve = get_retention_curve(df_cohorts)
-            insights = generate_insights(df_cohorts, retention_table)
+            # Pass pre-calculated metrics to avoid redundant computation
+            insights = generate_insights(df_cohorts, retention_table, advanced_metrics, cohort_sizes)
 
         # Summary metrics
         summary = get_cohort_summary(df_cohorts)
@@ -718,7 +719,7 @@ if uploaded_file is not None:
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            excel_data = export_to_excel(retention_table, revenue_table, customer_table)
+            excel_data = export_to_excel(retention_table, revenue_table, customer_table, revenue_retention_table)
             st.download_button(
                 label="All Data (.xlsx)",
                 data=excel_data,
