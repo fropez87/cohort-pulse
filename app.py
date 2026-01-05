@@ -511,6 +511,13 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 st.markdown('<p class="tagline">Understand your customer retention at a glance. Upload your order data to get started.</p>', unsafe_allow_html=True)
 
+# Privacy disclaimer
+st.markdown("""
+<p style="color: #9ca3af; font-size: 0.75rem; margin: 0 0 1.5rem 0;">
+    Your data is processed locally in your browser and is not stored on our servers.
+</p>
+""", unsafe_allow_html=True)
+
 # Required columns display
 st.markdown("""
 <div style="margin-bottom: 1.5rem;">
