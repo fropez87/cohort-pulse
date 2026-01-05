@@ -428,3 +428,207 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame) -> list:
             })
 
     return insights[:5]  # Return top 5 insights
+
+
+def get_frequency_segments(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Segment customers by purchase frequency and calculate retention metrics.
+
+    Args:
+        df: DataFrame with cohort data (from calculate_cohorts)
+
+    Returns:
+        DataFrame with frequency segments and their metrics
+    """
+    # Count orders per customer
+    customer_orders = df.groupby('customer_id').agg({
+        'order_date': 'count',
+        'order_amount': 'sum',
+        'cohort_month': 'first'
+    }).reset_index()
+    customer_orders.columns = ['customer_id', 'order_count', 'total_spent', 'cohort_month']
+
+    # Create frequency segments
+    def assign_segment(count):
+        if count == 1:
+            return '1 order'
+        elif count == 2:
+            return '2 orders'
+        elif count <= 4:
+            return '3-4 orders'
+        else:
+            return '5+ orders'
+
+    customer_orders['frequency_segment'] = customer_orders['order_count'].apply(assign_segment)
+
+    # Calculate metrics per segment
+    segment_metrics = customer_orders.groupby('frequency_segment').agg({
+        'customer_id': 'count',
+        'total_spent': ['sum', 'mean'],
+        'order_count': 'mean'
+    }).reset_index()
+    segment_metrics.columns = ['segment', 'customers', 'total_revenue', 'avg_revenue', 'avg_orders']
+
+    # Calculate percentage
+    total_customers = segment_metrics['customers'].sum()
+    segment_metrics['customer_pct'] = (segment_metrics['customers'] / total_customers * 100).round(1)
+
+    # Sort by order frequency
+    segment_order = {'1 order': 0, '2 orders': 1, '3-4 orders': 2, '5+ orders': 3}
+    segment_metrics['sort_order'] = segment_metrics['segment'].map(segment_order)
+    segment_metrics = segment_metrics.sort_values('sort_order').drop('sort_order', axis=1)
+
+    return segment_metrics
+
+
+def get_revenue_segments(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Segment customers by total revenue and calculate retention metrics.
+
+    Args:
+        df: DataFrame with cohort data (from calculate_cohorts)
+
+    Returns:
+        DataFrame with revenue segments and their metrics
+    """
+    # Calculate total spent per customer
+    customer_revenue = df.groupby('customer_id').agg({
+        'order_amount': 'sum',
+        'order_date': 'count',
+        'cohort_month': 'first'
+    }).reset_index()
+    customer_revenue.columns = ['customer_id', 'total_spent', 'order_count', 'cohort_month']
+
+    # Create revenue quartiles
+    customer_revenue['revenue_quartile'] = pd.qcut(
+        customer_revenue['total_spent'],
+        q=4,
+        labels=['Bottom 25%', 'Lower-Mid 25%', 'Upper-Mid 25%', 'Top 25%'],
+        duplicates='drop'
+    )
+
+    # Calculate metrics per quartile
+    quartile_metrics = customer_revenue.groupby('revenue_quartile', observed=True).agg({
+        'customer_id': 'count',
+        'total_spent': ['sum', 'mean', 'min', 'max'],
+        'order_count': 'mean'
+    }).reset_index()
+    quartile_metrics.columns = ['segment', 'customers', 'total_revenue', 'avg_revenue', 'min_revenue', 'max_revenue', 'avg_orders']
+
+    # Calculate percentage of total revenue
+    total_revenue = quartile_metrics['total_revenue'].sum()
+    quartile_metrics['revenue_pct'] = (quartile_metrics['total_revenue'] / total_revenue * 100).round(1)
+
+    return quartile_metrics
+
+
+def get_retention_by_frequency(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate retention rates segmented by purchase frequency.
+
+    Args:
+        df: DataFrame with cohort data (from calculate_cohorts)
+
+    Returns:
+        DataFrame with retention by frequency segment
+    """
+    # Get customer order counts
+    customer_orders = df.groupby('customer_id')['order_date'].count().reset_index()
+    customer_orders.columns = ['customer_id', 'order_count']
+
+    # Assign frequency segment
+    def assign_segment(count):
+        if count == 1:
+            return '1 order'
+        elif count == 2:
+            return '2 orders'
+        elif count <= 4:
+            return '3-4 orders'
+        else:
+            return '5+ orders'
+
+    customer_orders['frequency_segment'] = customer_orders['order_count'].apply(assign_segment)
+
+    # Merge back to main df
+    df_with_freq = df.merge(customer_orders[['customer_id', 'frequency_segment']], on='customer_id')
+
+    # Calculate retention by segment and cohort_index
+    retention_data = []
+    for segment in ['1 order', '2 orders', '3-4 orders', '5+ orders']:
+        segment_df = df_with_freq[df_with_freq['frequency_segment'] == segment]
+        if len(segment_df) == 0:
+            continue
+
+        # Get unique customers per cohort_index
+        cohort_retention = segment_df.groupby('cohort_index')['customer_id'].nunique().reset_index()
+        cohort_retention.columns = ['month', 'customers']
+
+        # Get base (month 0) customers
+        base_customers = cohort_retention[cohort_retention['month'] == 0]['customers'].values
+        if len(base_customers) > 0:
+            base = base_customers[0]
+            cohort_retention['retention'] = (cohort_retention['customers'] / base * 100).round(1)
+            cohort_retention['segment'] = segment
+            retention_data.append(cohort_retention)
+
+    if retention_data:
+        return pd.concat(retention_data, ignore_index=True)
+    return pd.DataFrame()
+
+
+def get_retention_by_revenue_segment(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate retention rates segmented by customer revenue quartile.
+
+    Args:
+        df: DataFrame with cohort data (from calculate_cohorts)
+
+    Returns:
+        DataFrame with retention by revenue segment
+    """
+    # Calculate total spent per customer
+    customer_revenue = df.groupby('customer_id')['order_amount'].sum().reset_index()
+    customer_revenue.columns = ['customer_id', 'total_spent']
+
+    # Create revenue quartiles
+    try:
+        customer_revenue['revenue_segment'] = pd.qcut(
+            customer_revenue['total_spent'],
+            q=4,
+            labels=['Low Value', 'Mid-Low', 'Mid-High', 'High Value'],
+            duplicates='drop'
+        )
+    except ValueError:
+        # If we can't create 4 quartiles, create fewer
+        customer_revenue['revenue_segment'] = pd.qcut(
+            customer_revenue['total_spent'],
+            q=2,
+            labels=['Lower Half', 'Upper Half'],
+            duplicates='drop'
+        )
+
+    # Merge back to main df
+    df_with_rev = df.merge(customer_revenue[['customer_id', 'revenue_segment']], on='customer_id')
+
+    # Calculate retention by segment and cohort_index
+    retention_data = []
+    for segment in df_with_rev['revenue_segment'].unique():
+        segment_df = df_with_rev[df_with_rev['revenue_segment'] == segment]
+        if len(segment_df) == 0:
+            continue
+
+        # Get unique customers per cohort_index
+        cohort_retention = segment_df.groupby('cohort_index')['customer_id'].nunique().reset_index()
+        cohort_retention.columns = ['month', 'customers']
+
+        # Get base (month 0) customers
+        base_customers = cohort_retention[cohort_retention['month'] == 0]['customers'].values
+        if len(base_customers) > 0:
+            base = base_customers[0]
+            cohort_retention['retention'] = (cohort_retention['customers'] / base * 100).round(1)
+            cohort_retention['segment'] = str(segment)
+            retention_data.append(cohort_retention)
+
+    if retention_data:
+        return pd.concat(retention_data, ignore_index=True)
+    return pd.DataFrame()

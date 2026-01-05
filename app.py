@@ -20,7 +20,11 @@ from cohort_analysis import (
     get_advanced_metrics,
     get_cohort_sizes,
     get_retention_curve,
-    generate_insights
+    generate_insights,
+    get_frequency_segments,
+    get_revenue_segments,
+    get_retention_by_frequency,
+    get_retention_by_revenue_segment
 )
 
 # Page configuration
@@ -256,7 +260,7 @@ st.markdown("""
     /* Download buttons - gradient accent style */
     .stDownloadButton > button {
         background: linear-gradient(135deg, var(--accent) 0%, #5b21b6 100%) !important;
-        color: white !important;
+        color: #ffffff !important;
         border: none !important;
         border-radius: var(--radius-sm) !important;
         padding: 0.875rem 1.75rem !important;
@@ -269,6 +273,10 @@ st.markdown("""
     .stDownloadButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45) !important;
+    }
+
+    .stDownloadButton > button p, .stDownloadButton > button span {
+        color: #ffffff !important;
     }
 
     /* Expander - modern style */
@@ -539,6 +547,10 @@ if uploaded_file is not None:
             cohort_sizes = get_cohort_sizes(df_cohorts)
             retention_curve = get_retention_curve(df_cohorts)
             insights = generate_insights(df_cohorts, retention_table)
+            frequency_segments = get_frequency_segments(df_cohorts)
+            revenue_segments = get_revenue_segments(df_cohorts)
+            retention_by_freq = get_retention_by_frequency(df_cohorts)
+            retention_by_rev = get_retention_by_revenue_segment(df_cohorts)
 
         # Summary metrics
         summary = get_cohort_summary(df_cohorts)
@@ -546,27 +558,24 @@ if uploaded_file is not None:
         st.markdown("---")
         st.markdown('<p class="section-header">Overview</p>', unsafe_allow_html=True)
 
-        # Row 1: Basic metrics
-        col1, col2, col3, col4 = st.columns(4)
+        # Metrics in 2 columns x 3 rows layout
+        col1, col2 = st.columns(2)
         with col1:
-            st.metric("Orders", f"{summary['total_orders']:,}")
+            st.metric("Total Orders", f"{summary['total_orders']:,}")
         with col2:
-            st.metric("Customers", f"{summary['unique_customers']:,}")
-        with col3:
-            st.metric("Revenue", f"${summary['total_revenue']:,.0f}")
-        with col4:
-            st.metric("Cohorts", summary['num_cohorts'])
+            st.metric("Unique Customers", f"{summary['unique_customers']:,}")
 
-        # Row 2: Advanced metrics
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2 = st.columns(2)
         with col1:
-            st.metric("Avg Order Value", f"${advanced_metrics['aov']:,.2f}")
+            st.metric("Total Revenue", f"${summary['total_revenue']:,.0f}")
         with col2:
+            st.metric("Avg Order Value", f"${advanced_metrics['aov']:,.2f}")
+
+        col1, col2 = st.columns(2)
+        with col1:
             st.metric("Customer LTV", f"${advanced_metrics['ltv']:,.2f}")
-        with col3:
+        with col2:
             st.metric("Repeat Rate", f"{advanced_metrics['repeat_rate']:.1f}%")
-        with col4:
-            st.metric("Orders/Customer", f"{advanced_metrics['avg_orders_per_customer']:.2f}")
 
         st.markdown(f'<div class="date-badge">{summary["date_range"]}</div>', unsafe_allow_html=True)
 
@@ -646,6 +655,81 @@ if uploaded_file is not None:
                 strokeWidth=0
             )
             st.altair_chart(cohort_chart, use_container_width=True)
+
+        # Retention by Segment Section
+        st.markdown('<p class="section-header">Retention by Segment</p>', unsafe_allow_html=True)
+
+        seg_col1, seg_col2 = st.columns(2)
+
+        with seg_col1:
+            st.markdown('<p class="section-subtext" style="margin-bottom: 0.75rem;">Retention by Purchase Frequency</p>', unsafe_allow_html=True)
+            if not retention_by_freq.empty:
+                freq_chart = alt.Chart(retention_by_freq).mark_bar(
+                    cornerRadiusTopLeft=6,
+                    cornerRadiusTopRight=6
+                ).encode(
+                    x=alt.X('frequency_segment:N', title='Frequency Segment',
+                            sort=['1 order', '2 orders', '3-4 orders', '5+ orders'],
+                            axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y('retention_rate:Q', title='Retention Rate %', scale=alt.Scale(domain=[0, 100])),
+                    color=alt.Color('frequency_segment:N',
+                                   scale=alt.Scale(range=['#c4b5fd', '#a78bfa', '#8b5cf6', '#7c3aed']),
+                                   legend=None),
+                    tooltip=[
+                        alt.Tooltip('frequency_segment:N', title='Segment'),
+                        alt.Tooltip('retention_rate:Q', title='Retention %', format='.1f'),
+                        alt.Tooltip('customer_count:Q', title='Customers')
+                    ]
+                ).properties(
+                    height=300
+                ).configure_axis(
+                    labelFontSize=11,
+                    titleFontSize=12,
+                    titleFontWeight=600,
+                    labelColor='#475569',
+                    titleColor='#0f172a',
+                    gridColor='#f1f5f9'
+                ).configure_view(
+                    strokeWidth=0
+                )
+                st.altair_chart(freq_chart, use_container_width=True)
+            else:
+                st.info("Not enough data to calculate frequency-based retention.")
+
+        with seg_col2:
+            st.markdown('<p class="section-subtext" style="margin-bottom: 0.75rem;">Retention by Revenue Tier</p>', unsafe_allow_html=True)
+            if not retention_by_rev.empty:
+                rev_chart = alt.Chart(retention_by_rev).mark_bar(
+                    cornerRadiusTopLeft=6,
+                    cornerRadiusTopRight=6
+                ).encode(
+                    x=alt.X('revenue_segment:N', title='Revenue Tier',
+                            sort=['Low', 'Medium', 'High', 'Premium'],
+                            axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y('retention_rate:Q', title='Retention Rate %', scale=alt.Scale(domain=[0, 100])),
+                    color=alt.Color('revenue_segment:N',
+                                   scale=alt.Scale(range=['#fde68a', '#fbbf24', '#f59e0b', '#d97706']),
+                                   legend=None),
+                    tooltip=[
+                        alt.Tooltip('revenue_segment:N', title='Tier'),
+                        alt.Tooltip('retention_rate:Q', title='Retention %', format='.1f'),
+                        alt.Tooltip('customer_count:Q', title='Customers')
+                    ]
+                ).properties(
+                    height=300
+                ).configure_axis(
+                    labelFontSize=11,
+                    titleFontSize=12,
+                    titleFontWeight=600,
+                    labelColor='#475569',
+                    titleColor='#0f172a',
+                    gridColor='#f1f5f9'
+                ).configure_view(
+                    strokeWidth=0
+                )
+                st.altair_chart(rev_chart, use_container_width=True)
+            else:
+                st.info("Not enough data to calculate revenue-based retention.")
 
         st.markdown("---")
 
