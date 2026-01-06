@@ -1,128 +1,100 @@
-import { useMemo } from 'react'
 import { cn } from '../lib/utils'
+import type { CohortMatrixData } from '../types'
 
-interface CohortHeatmapProps {
-  data: Record<string, Record<string, number | null>>
-  type: 'retention' | 'revenue' | 'customers' | 'revenue_retention'
+interface PayerMatrixProps {
+  data: CohortMatrixData
 }
 
-// Teal accent color matching our design system
-const ACCENT_COLOR = { r: 42, g: 157, b: 143 } // #2a9d8f
+export function PayerMatrix({ data }: PayerMatrixProps) {
+  const { matrix, payment_months, totals } = data
 
-export function CohortHeatmap({ data, type }: CohortHeatmapProps) {
-  const { rows, columns, maxValue } = useMemo(() => {
-    const rowKeys = Object.keys(data).sort()
-    const colSet = new Set<string>()
-    let max = 0
-
-    rowKeys.forEach(row => {
-      Object.keys(data[row]).forEach(col => {
-        colSet.add(col)
-        const val = data[row][col]
-        if (val !== null && val !== undefined) {
-          max = Math.max(max, val)
-        }
-      })
-    })
-
-    const colKeys = Array.from(colSet).sort((a, b) => {
-      const numA = parseInt(a.replace(/\D/g, ''))
-      const numB = parseInt(b.replace(/\D/g, ''))
-      return numA - numB
-    })
-
-    return { rows: rowKeys, columns: colKeys, maxValue: max }
-  }, [data])
-
-  const getCellStyle = (value: number | null | undefined) => {
-    if (value === null || value === undefined) {
-      return { backgroundColor: '#f5f5f5' }
+  const formatCurrency = (value: number) => {
+    if (Math.abs(value) < 0.5) return ''
+    if (value < 0) {
+      return `(${Math.abs(Math.round(value)).toLocaleString()})`
     }
-
-    if (type === 'retention' || type === 'revenue_retention') {
-      // Subtle green scale for retention
-      const ratio = Math.min(value / 100, 1)
-      const opacity = 0.15 + ratio * 0.5
-      return { backgroundColor: `rgba(${ACCENT_COLOR.r}, ${ACCENT_COLOR.g}, ${ACCENT_COLOR.b}, ${opacity})` }
-    }
-
-    if (type === 'revenue') {
-      // Blue scale for revenue
-      const ratio = maxValue > 0 ? Math.min(value / maxValue, 1) : 0
-      return { backgroundColor: `rgba(59, 130, 246, ${0.1 + ratio * 0.5})` }
-    }
-
-    // Customers - use accent teal
-    const ratio = maxValue > 0 ? Math.min(value / maxValue, 1) : 0
-    return { backgroundColor: `rgba(${ACCENT_COLOR.r}, ${ACCENT_COLOR.g}, ${ACCENT_COLOR.b}, ${0.1 + ratio * 0.5})` }
+    return Math.round(value).toLocaleString()
   }
 
-  const formatValue = (value: number | null | undefined) => {
-    if (value === null || value === undefined) return '-'
-
-    if (type === 'retention' || type === 'revenue_retention') {
-      return `${value.toFixed(1)}%`
+  const getCellStyle = (value: number) => {
+    if (Math.abs(value) < 0.5) return {}
+    if (value < 0) {
+      return { color: '#dc2626' } // red for negative
     }
-
-    if (type === 'revenue') {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-        notation: value >= 10000 ? 'compact' : 'standard',
-      }).format(value)
-    }
-
-    return new Intl.NumberFormat('en-US').format(value)
+    return {}
   }
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
+      <table className="w-full border-collapse text-sm font-mono">
         <thead>
-          <tr>
-            <th className="sticky left-0 z-10 bg-muted p-3 text-left text-xs font-medium text-muted-foreground border-b border-border">
-              Cohort
+          <tr className="bg-muted">
+            <th className="sticky left-0 z-10 bg-muted p-3 text-left text-xs font-semibold text-foreground border-b border-r border-border whitespace-nowrap">
+              DOS Month
             </th>
-            {columns.map(col => (
+            <th className="p-3 text-right text-xs font-semibold text-foreground border-b border-r border-border whitespace-nowrap bg-blue-50">
+              Gross Charge
+            </th>
+            {payment_months.map(month => (
               <th
-                key={col}
-                className="p-3 text-center text-xs font-medium text-muted-foreground border-b border-border bg-muted whitespace-nowrap"
+                key={month}
+                className="p-3 text-right text-xs font-semibold text-foreground border-b border-border whitespace-nowrap"
               >
-                {col}
+                {month}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, rowIndex) => (
+          {matrix.map((row, rowIndex) => (
             <tr
-              key={row}
-              className="opacity-0 animate-fade-in"
-              style={{ animationDelay: `${rowIndex * 30}ms` }}
+              key={row.dos_month}
+              className={cn(
+                "hover:bg-muted/50 transition-colors",
+                rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+              )}
             >
-              <td className="sticky left-0 z-10 bg-white p-3 text-sm font-medium text-foreground border-b border-border whitespace-nowrap">
-                {row}
+              <td className="sticky left-0 z-10 p-3 text-sm font-medium text-foreground border-b border-r border-border whitespace-nowrap bg-inherit">
+                {row.dos_month}
               </td>
-              {columns.map(col => {
-                const value = data[row]?.[col]
+              <td className="p-3 text-right text-sm border-b border-r border-border whitespace-nowrap bg-blue-50/50 font-semibold">
+                {formatCurrency(row.gross_charge)}
+              </td>
+              {payment_months.map(month => {
+                const value = row.payments[month] || 0
                 return (
                   <td
-                    key={col}
-                    className={cn(
-                      "p-3 text-center text-sm border-b border-border transition-colors duration-150",
-                      value !== null && value !== undefined ? "text-foreground" : "text-muted-foreground"
-                    )}
+                    key={month}
+                    className="p-3 text-right text-sm border-b border-border whitespace-nowrap"
                     style={getCellStyle(value)}
-                    title={`${row} - ${col}: ${formatValue(value)}`}
                   >
-                    {formatValue(value)}
+                    {formatCurrency(value)}
                   </td>
                 )
               })}
             </tr>
           ))}
+          {/* Grand Totals Row */}
+          <tr className="bg-muted font-bold border-t-2 border-foreground">
+            <td className="sticky left-0 z-10 bg-muted p-3 text-sm font-bold text-foreground border-r border-border whitespace-nowrap">
+              Grand Totals
+            </td>
+            <td className="p-3 text-right text-sm border-r border-border whitespace-nowrap bg-blue-100">
+              {formatCurrency(totals.gross_charge)}
+            </td>
+            {payment_months.map(month => {
+              const value = totals.payments[month] || 0
+              return (
+                <td
+                  key={month}
+                  className="p-3 text-right text-sm border-border whitespace-nowrap"
+                  style={getCellStyle(value)}
+                >
+                  {formatCurrency(value)}
+                </td>
+              )
+            })}
+          </tr>
         </tbody>
       </table>
     </div>
