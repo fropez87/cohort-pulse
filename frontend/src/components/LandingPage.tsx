@@ -123,7 +123,7 @@ const analysisConfig = {
     ctaTitle: 'Ready to analyze your payments?',
     ctaDescription: 'Upload your payment data and see your collection waterfall instantly. No signup required.',
     note: 'Multiple payments per claim are supported - the same claim_id can appear multiple times with different payment dates. Gross charge is deduplicated by claim_id.',
-    columnChips: ['claim_id', 'service_date', 'date_paid', 'amount_paid', 'payer'],
+    columnChips: ['claim_id', 'service_date', 'date_paid', 'billed_amount', 'amount_paid', 'payer', 'service_type'],
   },
 }
 
