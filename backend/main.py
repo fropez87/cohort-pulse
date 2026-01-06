@@ -14,8 +14,6 @@ import io
 import sys
 import os
 
-# Add parent directory to path to import cohort_analysis
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cohort_analysis import (
     load_and_validate_data,
@@ -40,9 +38,10 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:3000",
-        "https://cohort-pulse.onrender.com",
         "https://cohortpulse.com",
         "https://www.cohortpulse.com",
+        "https://cohort-pulse.vercel.app",
+        "https://cohort-pulse-*.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
