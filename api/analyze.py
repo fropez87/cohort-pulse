@@ -12,9 +12,7 @@ import io
 import sys
 import os
 
-# Add parent directory to path to import cohort_analysis
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+# Import from local cohort_analysis module
 from cohort_analysis import (
     load_and_validate_data,
     calculate_cohorts,
