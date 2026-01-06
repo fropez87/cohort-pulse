@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import pandas as pd
+import numpy as np
+import json
 import io
 import sys
 import os
@@ -98,23 +100,39 @@ async def analyze_cohorts(file: UploadFile = File(...)):
         retention_curve = get_retention_curve(df_cohorts)
         insights = generate_insights(df_cohorts, retention_table, advanced_metrics, cohort_sizes)
 
+        # Convert numpy types to native Python types for JSON serialization
+        def convert_numpy(obj):
+            if isinstance(obj, dict):
+                return {k: convert_numpy(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_numpy(i) for i in obj]
+            elif isinstance(obj, (np.integer, np.int64)):
+                return int(obj)
+            elif isinstance(obj, (np.floating, np.float64)):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif pd.isna(obj):
+                return None
+            return obj
+
         # Convert tables to JSON-friendly format
         def table_to_dict(df):
             df_copy = df.copy()
             df_copy.index = df_copy.index.astype(str)
-            return df_copy.to_dict(orient='index')
+            return convert_numpy(df_copy.to_dict(orient='index'))
 
         return AnalysisResponse(
             success=True,
-            summary=summary,
-            metrics=advanced_metrics,
-            insights=insights,
+            summary=convert_numpy(summary),
+            metrics=convert_numpy(advanced_metrics),
+            insights=convert_numpy(insights),
             retention_table=table_to_dict(retention_table),
             revenue_table=table_to_dict(revenue_table),
             customer_table=table_to_dict(customer_table),
             revenue_retention_table=table_to_dict(revenue_retention_table),
-            cohort_sizes=cohort_sizes.to_dict(orient='records'),
-            retention_curve=retention_curve.to_dict(orient='records')
+            cohort_sizes=convert_numpy(cohort_sizes.to_dict(orient='records')),
+            retention_curve=convert_numpy(retention_curve.to_dict(orient='records'))
         )
 
     except Exception as e:
