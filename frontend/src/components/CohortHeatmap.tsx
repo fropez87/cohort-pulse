@@ -6,6 +6,9 @@ interface CohortHeatmapProps {
   type: 'retention' | 'revenue' | 'customers' | 'revenue_retention'
 }
 
+// Teal accent color matching our design system
+const ACCENT_COLOR = { r: 42, g: 157, b: 143 } // #2a9d8f
+
 export function CohortHeatmap({ data, type }: CohortHeatmapProps) {
   const { rows, columns, maxValue } = useMemo(() => {
     const rowKeys = Object.keys(data).sort()
@@ -33,26 +36,25 @@ export function CohortHeatmap({ data, type }: CohortHeatmapProps) {
 
   const getCellStyle = (value: number | null | undefined) => {
     if (value === null || value === undefined) {
-      return { backgroundColor: 'rgba(0,0,0,0.05)' }
+      return { backgroundColor: '#f5f5f5' }
     }
 
     if (type === 'retention' || type === 'revenue_retention') {
+      // Subtle green scale for retention
       const ratio = Math.min(value / 100, 1)
-      // Interpolate from red through yellow to green
-      const r = ratio < 0.5 ? 255 : Math.floor(255 * (1 - (ratio - 0.5) * 2))
-      const g = ratio < 0.5 ? Math.floor(255 * ratio * 2) : 255
-      const b = 0
-      return { backgroundColor: `rgba(${r}, ${g}, ${b}, 0.7)` }
+      const opacity = 0.15 + ratio * 0.5
+      return { backgroundColor: `rgba(${ACCENT_COLOR.r}, ${ACCENT_COLOR.g}, ${ACCENT_COLOR.b}, ${opacity})` }
     }
 
     if (type === 'revenue') {
+      // Blue scale for revenue
       const ratio = maxValue > 0 ? Math.min(value / maxValue, 1) : 0
-      return { backgroundColor: `rgba(59, 130, 246, ${0.1 + ratio * 0.7})` }
+      return { backgroundColor: `rgba(59, 130, 246, ${0.1 + ratio * 0.5})` }
     }
 
-    // Customers
+    // Customers - use accent teal
     const ratio = maxValue > 0 ? Math.min(value / maxValue, 1) : 0
-    return { backgroundColor: `rgba(124, 58, 237, ${0.1 + ratio * 0.7})` }
+    return { backgroundColor: `rgba(${ACCENT_COLOR.r}, ${ACCENT_COLOR.g}, ${ACCENT_COLOR.b}, ${0.1 + ratio * 0.5})` }
   }
 
   const formatValue = (value: number | null | undefined) => {
@@ -77,16 +79,16 @@ export function CohortHeatmap({ data, type }: CohortHeatmapProps) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse text-sm">
         <thead>
           <tr>
-            <th className="sticky left-0 z-10 bg-background p-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b">
+            <th className="sticky left-0 z-10 bg-muted p-3 text-left text-xs font-medium text-muted-foreground border-b border-border">
               Cohort
             </th>
             {columns.map(col => (
               <th
                 key={col}
-                className="p-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b whitespace-nowrap"
+                className="p-3 text-center text-xs font-medium text-muted-foreground border-b border-border bg-muted whitespace-nowrap"
               >
                 {col}
               </th>
@@ -98,9 +100,9 @@ export function CohortHeatmap({ data, type }: CohortHeatmapProps) {
             <tr
               key={row}
               className="opacity-0 animate-fade-in"
-              style={{ animationDelay: `${rowIndex * 50}ms` }}
+              style={{ animationDelay: `${rowIndex * 30}ms` }}
             >
-              <td className="sticky left-0 z-10 bg-background p-3 text-sm font-medium text-foreground border-b whitespace-nowrap">
+              <td className="sticky left-0 z-10 bg-white p-3 text-sm font-medium text-foreground border-b border-border whitespace-nowrap">
                 {row}
               </td>
               {columns.map(col => {
@@ -109,7 +111,7 @@ export function CohortHeatmap({ data, type }: CohortHeatmapProps) {
                   <td
                     key={col}
                     className={cn(
-                      "p-3 text-center text-sm font-medium border-b transition-all duration-200 hover:ring-2 hover:ring-primary hover:ring-inset cursor-default",
+                      "p-3 text-center text-sm border-b border-border transition-colors duration-150",
                       value !== null && value !== undefined ? "text-foreground" : "text-muted-foreground"
                     )}
                     style={getCellStyle(value)}

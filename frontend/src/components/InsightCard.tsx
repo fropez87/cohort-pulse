@@ -14,19 +14,19 @@ export function InsightCard({ type, title, text, delay = 0 }: InsightCardProps) 
       icon: TrendingUp,
       bg: 'bg-emerald-50',
       border: 'border-l-emerald-500',
-      iconColor: 'text-emerald-500',
+      iconColor: 'text-emerald-600',
     },
     warning: {
       icon: TrendingDown,
       bg: 'bg-amber-50',
       border: 'border-l-amber-500',
-      iconColor: 'text-amber-500',
+      iconColor: 'text-amber-600',
     },
     info: {
       icon: Info,
-      bg: 'bg-primary/5',
-      border: 'border-l-primary',
-      iconColor: 'text-primary',
+      bg: 'bg-muted',
+      border: 'border-l-muted-foreground',
+      iconColor: 'text-muted-foreground',
     },
   }
 
@@ -35,7 +35,7 @@ export function InsightCard({ type, title, text, delay = 0 }: InsightCardProps) 
   return (
     <div
       className={cn(
-        "p-4 rounded-lg border-l-4 transition-all duration-300 hover:translate-x-1 opacity-0 animate-fade-in",
+        "p-4 rounded-md border-l-4 opacity-0 animate-fade-in",
         bg,
         border
       )}
@@ -43,10 +43,10 @@ export function InsightCard({ type, title, text, delay = 0 }: InsightCardProps) 
     >
       <div className="flex items-start gap-3">
         <div className={cn("mt-0.5", iconColor)}>
-          <Icon className="h-5 w-5" />
+          <Icon className="h-4 w-4" />
         </div>
-        <div className="space-y-1">
-          <p className="font-semibold text-foreground">{title}</p>
+        <div className="space-y-0.5">
+          <p className="font-medium text-sm text-foreground">{title}</p>
           <p className="text-sm text-muted-foreground">{text}</p>
         </div>
       </div>

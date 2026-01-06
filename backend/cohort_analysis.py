@@ -446,15 +446,23 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
                         'text': f"Recent cohorts are {decline_pct:.0f}% smaller than earlier ones."
                     })
 
-        # Insight 4: LTV insight
+        # Insight 4: Lifetime revenue insight
         if metrics['ltv'] > 0:
             insights.append({
                 'type': 'info',
-                'title': 'Customer lifetime value',
+                'title': 'Lifetime revenue',
                 'text': f"Average customer generates ${metrics['ltv']:.2f} in revenue over their lifetime."
             })
 
-        # Insight 5: Month 2+ retention (stickiness)
+        # Insight 5: Purchase frequency
+        if metrics['avg_orders_per_customer'] > 0:
+            insights.append({
+                'type': 'info',
+                'title': 'Purchase frequency',
+                'text': f"Customers place an average of {metrics['avg_orders_per_customer']:.1f} orders each."
+            })
+
+        # Insight 6: Month 2+ retention (stickiness)
         if 'Month 2' in retention_table.columns:
             month2_data = retention_table['Month 2'].dropna()
             if len(month2_data) > 0:
@@ -470,4 +478,4 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
         # If insight generation fails, return empty list rather than crashing
         pass
 
-    return insights[:5]  # Return top 5 insights
+    return insights[:6]  # Return top 6 insights

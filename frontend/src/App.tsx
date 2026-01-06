@@ -25,10 +25,12 @@ function App() {
   const [data, setData] = useState<AnalysisData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
 
   const handleFileSelect = async (file: File) => {
     setIsLoading(true)
     setError(null)
+    setUploadedFile(file)
 
     try {
       const formData = new FormData()
@@ -49,14 +51,41 @@ function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setData(null)
+      setUploadedFile(null)
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleExport = async () => {
-    // Would need to re-upload file for export - simplified for demo
-    alert('Export functionality - would download Excel file')
+    if (!uploadedFile) return
+
+    try {
+      const formData = new FormData()
+      formData.append('file', uploadedFile)
+
+      const response = await fetch(`${API_URL}/export`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('Export failed')
+      }
+
+      // Download the Excel file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'cohort_pulse_export.xlsx'
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      alert('Export failed. Please try again.')
+    }
   }
 
   return (
@@ -114,8 +143,11 @@ function App() {
                   Export
                 </button>
                 <button
-                  onClick={() => setData(null)}
-                  className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors shadow-lg shadow-primary/25"
+                  onClick={() => {
+                    setData(null)
+                    setUploadedFile(null)
+                  }}
+                  className="px-4 py-2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-all duration-150 shadow-sm hover:shadow"
                 >
                   New Analysis
                 </button>
@@ -153,7 +185,7 @@ function App() {
                 delay={300}
               />
               <MetricCard
-                title="Customer LTV"
+                title="Lifetime Revenue"
                 value={data.metrics?.ltv || 0}
                 icon={Calendar}
                 format="currency"
@@ -237,10 +269,28 @@ function App() {
               </CardContent>
             </Card>
 
-            {/* Footer */}
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              <p>Your data is processed locally and is not stored on our servers.</p>
-              <p className="mt-2 font-medium">Cohort Pulse</p>
+            {/* Footer / Disclaimer */}
+            <div className="border-t border-border pt-8 mt-8">
+              <div className="max-w-3xl mx-auto text-center space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Your data is processed locally in your browser and is not stored on our servers.
+                </p>
+                <div className="text-xs text-muted-foreground/70 space-y-2">
+                  <p>
+                    <strong>Disclaimer:</strong> This tool is provided for informational and educational purposes only.
+                    The analysis, metrics, and insights generated are based solely on the data you provide and may contain
+                    errors, inaccuracies, or omissions. We make no representations or warranties regarding the accuracy,
+                    completeness, or reliability of any results.
+                  </p>
+                  <p>
+                    Cohort Pulse does not verify the authenticity or validity of uploaded data. Any business decisions
+                    made based on this analysis are at your own risk. This tool should not be used as the sole basis
+                    for financial, strategic, or operational decisions. Always consult with qualified professionals
+                    and verify results independently before taking action.
+                  </p>
+                </div>
+                <p className="text-sm font-medium text-muted-foreground pt-2">Cohort Pulse</p>
+              </div>
             </div>
           </div>
         )}

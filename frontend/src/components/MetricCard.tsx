@@ -63,16 +63,16 @@ export function MetricCard({ title, value, icon: Icon, trend, delay = 0, format 
 
   return (
     <Card className={cn(
-      "overflow-hidden opacity-0",
+      "overflow-hidden opacity-0 border border-border shadow-sm hover:shadow-md transition-shadow duration-150",
       isVisible && "animate-fade-in"
     )}>
       <div className="p-6">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+            <p className="text-sm font-medium text-muted-foreground">
               {title}
             </p>
-            <p className="text-3xl font-bold tracking-tight">
+            <p className="text-2xl font-semibold tracking-tight text-foreground">
               {typeof value === 'number' ? formatValue(displayValue) : value}
             </p>
             {trend && (
@@ -85,13 +85,11 @@ export function MetricCard({ title, value, icon: Icon, trend, delay = 0, format 
               </p>
             )}
           </div>
-          <div className="p-3 rounded-xl bg-primary/10">
-            <Icon className="h-6 w-6 text-primary" />
+          <div className="p-2.5 rounded-lg bg-muted">
+            <Icon className="h-5 w-5 text-muted-foreground" />
           </div>
         </div>
       </div>
-      {/* Accent bar */}
-      <div className="h-1 bg-gradient-to-r from-primary to-primary/50" />
     </Card>
   )
 }

@@ -28,11 +28,11 @@ export function FileUpload({ onFileSelect, isLoading }: FileUploadProps) {
     <div
       {...getRootProps()}
       className={cn(
-        "relative group cursor-pointer rounded-2xl border-2 border-dashed transition-all duration-300",
-        "p-12 text-center",
+        "relative cursor-pointer rounded-lg border-2 border-dashed transition-all duration-150",
+        "p-12 text-center bg-white",
         isDragActive
-          ? "border-primary bg-primary/5 scale-[1.02]"
-          : "border-border hover:border-primary/50 hover:bg-muted/50",
+          ? "border-primary bg-primary/5"
+          : "border-border hover:border-muted-foreground/50",
         isLoading && "opacity-50 cursor-not-allowed"
       )}
     >
@@ -40,20 +40,18 @@ export function FileUpload({ onFileSelect, isLoading }: FileUploadProps) {
 
       <div className="flex flex-col items-center gap-4">
         <div className={cn(
-          "p-4 rounded-2xl transition-all duration-300",
-          isDragActive
-            ? "bg-primary/10 scale-110"
-            : "bg-muted group-hover:bg-primary/10 group-hover:scale-105"
+          "p-4 rounded-lg transition-all duration-150",
+          isDragActive ? "bg-primary/10" : "bg-muted"
         )}>
           {isDragActive ? (
-            <FileSpreadsheet className="h-10 w-10 text-primary" />
+            <FileSpreadsheet className="h-8 w-8 text-primary" />
           ) : (
-            <Upload className="h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors" />
+            <Upload className="h-8 w-8 text-muted-foreground" />
           )}
         </div>
 
-        <div className="space-y-2">
-          <p className="text-lg font-semibold text-foreground">
+        <div className="space-y-1">
+          <p className="text-base font-medium text-foreground">
             {isDragActive ? "Drop your file here" : "Drop your CSV file here"}
           </p>
           <p className="text-sm text-muted-foreground">
@@ -62,24 +60,17 @@ export function FileUpload({ onFileSelect, isLoading }: FileUploadProps) {
         </div>
 
         <div className="flex gap-2 mt-2">
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium">
             order_date
           </span>
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium">
             customer_id
           </span>
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium">
             order_amount
           </span>
         </div>
       </div>
-
-      {/* Animated border effect */}
-      <div className={cn(
-        "absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300",
-        "bg-gradient-to-r from-primary/20 via-transparent to-primary/20",
-        isDragActive && "opacity-100 animate-pulse"
-      )} />
     </div>
   )
 }
