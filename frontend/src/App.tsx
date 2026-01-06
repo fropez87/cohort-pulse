@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { Header } from './components/Header'
 import { LandingPage, type AnalysisType } from './components/LandingPage'
 import { PayerMatrix } from './components/CohortHeatmap'
@@ -23,6 +23,7 @@ function App() {
   const [selectedPayer, setSelectedPayer] = useState<string>('')
   const [selectedServiceType, setSelectedServiceType] = useState<string>('')
   const [rowCount, setRowCount] = useState(0)
+  const [rawData, setRawData] = useState<Array<Record<string, unknown>>>([])
 
   // Retention state
   const [retentionData, setRetentionData] = useState<RetentionAnalysisResponse | null>(null)
@@ -37,7 +38,7 @@ function App() {
       formData.append('file', file)
 
       if (type === 'waterfall') {
-        // Waterfall upload
+        // Waterfall upload - now returns matrix data directly
         const response = await fetch(`${API_URL}/upload`, {
           method: 'POST',
           body: formData,
@@ -50,10 +51,25 @@ function App() {
         const result: UploadResponse = await response.json()
         setFilters(result.filters)
         setRowCount(result.rows)
-        setIsUploaded(true)
 
-        // Fetch initial matrix
-        await fetchMatrix()
+        // Store raw data for client-side filtering
+        if (result.data) {
+          setRawData(result.data)
+        }
+
+        // Use matrix data from response (for serverless compatibility)
+        if (result.matrix && result.payment_months && result.totals) {
+          setMatrixData({
+            matrix: result.matrix,
+            payment_months: result.payment_months,
+            totals: result.totals
+          })
+        } else {
+          // Fallback to fetching matrix (for local dev with stateful backend)
+          await fetchMatrix()
+        }
+
+        setIsUploaded(true)
       } else {
         // Retention upload
         const response = await fetch(`${API_URL}/analyze`, {
@@ -79,32 +95,59 @@ function App() {
     }
   }
 
-  const fetchMatrix = async (payer?: string, serviceType?: string) => {
-    setIsLoading(true)
-    try {
-      const params = new URLSearchParams()
-      if (payer) params.append('payer', payer)
-      if (serviceType) params.append('service_type', serviceType)
-
-      const response = await fetch(`${API_URL}/cohort-matrix?${params}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch matrix')
+  const fetchMatrix = useCallback(async (payer?: string, serviceType?: string) => {
+    // If we have raw data, use POST to cohort-matrix with data
+    if (rawData.length > 0) {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`${API_URL}/cohort-matrix`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: rawData,
+            payer: payer || null,
+            service_type: serviceType || null
+          })
+        })
+        if (!response.ok) {
+          throw new Error('Failed to fetch matrix')
+        }
+        const data: CohortMatrixData = await response.json()
+        setMatrixData(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load matrix')
+      } finally {
+        setIsLoading(false)
       }
+    } else {
+      // Fallback to GET (for local dev)
+      setIsLoading(true)
+      try {
+        const params = new URLSearchParams()
+        if (payer) params.append('payer', payer)
+        if (serviceType) params.append('service_type', serviceType)
 
-      const data: CohortMatrixData = await response.json()
-      setMatrixData(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load matrix')
-    } finally {
-      setIsLoading(false)
+        const response = await fetch(`${API_URL}/cohort-matrix?${params}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch matrix')
+        }
+
+        const data: CohortMatrixData = await response.json()
+        setMatrixData(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load matrix')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
+  }, [rawData])
 
-  useEffect(() => {
+  // Only refetch when filters change (not on initial load - that uses upload response)
+  const handleFilterChange = useCallback((payer: string, serviceType: string) => {
     if (isUploaded && analysisType === 'waterfall') {
-      fetchMatrix(selectedPayer || undefined, selectedServiceType || undefined)
+      fetchMatrix(payer || undefined, serviceType || undefined)
     }
-  }, [selectedPayer, selectedServiceType, isUploaded, analysisType])
+  }, [isUploaded, analysisType, fetchMatrix])
 
   const handleReset = () => {
     setAnalysisType(null)
@@ -116,6 +159,7 @@ function App() {
     setSelectedServiceType('')
     setError(null)
     setRowCount(0)
+    setRawData([])
   }
 
   const handleExportCSV = () => {
@@ -217,7 +261,11 @@ function App() {
                     <label className="text-sm font-medium text-foreground">Payer</label>
                     <select
                       value={selectedPayer}
-                      onChange={(e) => setSelectedPayer(e.target.value)}
+                      onChange={(e) => {
+                        const newPayer = e.target.value
+                        setSelectedPayer(newPayer)
+                        handleFilterChange(newPayer, selectedServiceType)
+                      }}
                       className="px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm min-w-[200px]"
                     >
                       <option value="">All Payers</option>
@@ -230,7 +278,11 @@ function App() {
                     <label className="text-sm font-medium text-foreground">Service Type</label>
                     <select
                       value={selectedServiceType}
-                      onChange={(e) => setSelectedServiceType(e.target.value)}
+                      onChange={(e) => {
+                        const newServiceType = e.target.value
+                        setSelectedServiceType(newServiceType)
+                        handleFilterChange(selectedPayer, newServiceType)
+                      }}
                       className="px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm min-w-[200px]"
                     >
                       <option value="">All Service Types</option>

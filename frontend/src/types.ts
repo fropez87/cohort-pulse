@@ -9,6 +9,14 @@ export interface WaterfallUploadResponse {
     payers: string[]
     service_types: string[]
   }
+  // Include matrix data in upload response for serverless compatibility
+  data?: Array<Record<string, unknown>>
+  matrix?: MatrixRow[]
+  payment_months?: string[]
+  totals?: {
+    gross_charge: number
+    payments: Record<string, number>
+  }
 }
 
 export interface MatrixRow {

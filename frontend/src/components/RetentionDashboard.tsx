@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { RetentionCurve, CohortSizeChart } from './Charts'
 import type { RetentionAnalysisResponse } from '../types'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Download } from 'lucide-react'
 import { useState } from 'react'
 
 interface RetentionDashboardProps {
@@ -13,7 +14,7 @@ type TableType = 'retention' | 'customers' | 'revenue_retention' | 'revenue'
 export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
   const [activeTable, setActiveTable] = useState<TableType>('retention')
 
-  const { summary, metrics, insights, retention_table, revenue_table, customer_table, revenue_retention_table } = data
+  const { summary, metrics, insights, retention_table, revenue_table, customer_table, revenue_retention_table, retention_curve, cohort_sizes } = data
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -144,6 +145,18 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
         <p className="text-sm text-muted-foreground">{summary.date_range}</p>
       )}
 
+      {/* Charts */}
+      {(retention_curve || cohort_sizes) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {retention_curve && retention_curve.length > 0 && (
+            <RetentionCurve data={retention_curve} />
+          )}
+          {cohort_sizes && cohort_sizes.length > 0 && (
+            <CohortSizeChart data={cohort_sizes} />
+          )}
+        </div>
+      )}
+
       {/* Insights */}
       {insights && insights.length > 0 && (
         <Card>
@@ -151,7 +164,7 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
             <CardTitle>Key Insights</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {insights.map((insight, index) => (
                 <div
                   key={index}
