@@ -396,14 +396,27 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
       {/* Footer */}
       <footer className="border-t border-border pt-8">
         <div className="max-w-3xl mx-auto text-center space-y-4">
-          <div className="text-xs text-muted-foreground/70 space-y-2">
+          <div className="text-xs text-muted-foreground/70 space-y-3">
+            <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-800">
+              <p className="font-semibold mb-1">Important Privacy & Compliance Notice</p>
+              <p>
+                Do NOT upload files containing Personally Identifiable Information (PII), Protected Health Information (PHI),
+                or any sensitive data. This tool is NOT HIPAA compliant. For healthcare analytics, ensure all data is
+                fully de-identified before uploading. By using this tool, you confirm that your data contains no PII or PHI.
+              </p>
+            </div>
             <p>
               <strong>Disclaimer:</strong> This tool is provided for informational and educational purposes only.
               The analysis generated is based solely on the data you provide and may contain
               errors or omissions. We make no representations regarding the accuracy or reliability of any results.
             </p>
           </div>
-          <p className="text-sm font-medium text-muted-foreground pt-2">Cohort Pulse</p>
+          <div className="pt-4 border-t border-border">
+            <p className="text-sm font-medium text-muted-foreground">Cohort Pulse</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              &copy; {new Date().getFullYear()} Cohort Pulse. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
