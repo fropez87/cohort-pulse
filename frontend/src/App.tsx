@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Header } from './components/Header'
-import { FileUpload } from './components/FileUpload'
+import { LandingPage } from './components/LandingPage'
 import { MetricCard } from './components/MetricCard'
 import { InsightCard } from './components/InsightCard'
 import { RetentionCurve, CohortSizeChart } from './components/Charts'
@@ -93,31 +93,13 @@ function App() {
       <Header />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Hero Section */}
+        {/* Landing Page */}
         {!data && !isLoading && (
-          <div className="max-w-2xl mx-auto text-center mb-12 animate-fade-in">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Understand your customer retention
-            </h2>
-            <p className="text-lg text-muted-foreground mb-2">
-              Upload your order data to get instant cohort analysis and actionable insights.
-            </p>
-            <p className="text-sm text-muted-foreground/70">
-              Your data is processed locally and is not stored on our servers.
-            </p>
-          </div>
-        )}
-
-        {/* File Upload */}
-        {!data && !isLoading && (
-          <div className="max-w-xl mx-auto mb-12">
-            <FileUpload onFileSelect={handleFileSelect} isLoading={isLoading} />
-            {error && (
-              <div className="mt-4 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-                {error}
-              </div>
-            )}
-          </div>
+          <LandingPage
+            onFileSelect={handleFileSelect}
+            isLoading={isLoading}
+            error={error}
+          />
         )}
 
         {/* Loading State */}
