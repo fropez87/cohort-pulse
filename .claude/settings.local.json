@@ -25,7 +25,10 @@
       "Bash(copy:*)",
       "Bash(uvicorn main:app:*)",
       "Bash(npm run dev:*)",
-      "Bash(python -m uvicorn:*)"
+      "Bash(python -m uvicorn:*)",
+      "Bash(git -C \"c:\\\\Users\\\\glope\\\\cohort-analysis\" add -A)",
+      "Bash(git -C \"c:\\\\Users\\\\glope\\\\cohort-analysis\" commit -m \"Add vercel.json to frontend folder for proper build config\")",
+      "Bash(git -C \"c:\\\\Users\\\\glope\\\\cohort-analysis\" push origin main)"
     ]
   }
 }
