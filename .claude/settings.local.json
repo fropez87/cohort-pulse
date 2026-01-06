@@ -35,7 +35,30 @@
       "Bash(git -C \"c:/Users/glope/cohort-analysis\" push origin main)",
       "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Add Open Graph and Twitter Card meta tags for link previews\")",
       "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Add Google Analytics 4 tracking\")",
-      "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Use dynamic OG image service for link previews\")"
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Use dynamic OG image service for link previews\")",
+      "Bash(mkdir:*)",
+      "Bash(npm init:*)",
+      "Bash(cat:*)",
+      "Bash(start http://localhost:5175)",
+      "Bash(findstr:*)",
+      "Bash(taskkill //F //PID 73208)",
+      "Bash(taskkill //F //PID 31880)",
+      "Bash(taskkill:*)",
+      "Bash(timeout:*)",
+      "Bash(python:*)",
+      "Bash(tasklist:*)",
+      "Bash(PYTHONPATH=\"c:/Users/glope/cohort-analysis/backend\" python:*)",
+      "Bash(echo:*)",
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Update branding with logocp.png across site\")",
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" status)",
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" add frontend/public/logocp.png frontend/index.html frontend/src/components/Header.tsx frontend/src/components/LandingPage.tsx)",
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Update branding with logocp.png across site - Header logo, favicon, OG image for link previews, and footer text\")",
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" add frontend/src/components/Header.tsx)",
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Simplify header - larger logo, no text\")",
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Increase header logo size to h-14\")",
+      "Bash(PYTHONPATH=\"c:/Users/glope/cohort-analysis\" python:*)",
+      "Bash(dir:*)",
+      "Bash(start http://localhost:5173)"
     ]
   }
 }

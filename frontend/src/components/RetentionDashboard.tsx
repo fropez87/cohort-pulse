@@ -79,6 +79,48 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
   const columns = getColumns()
   const cohorts = currentTable ? Object.keys(currentTable).sort() : []
 
+  // Export to CSV function
+  const handleExportCSV = () => {
+    if (!retention_table) return
+
+    // Build CSV with all tables
+    const rows: string[] = []
+
+    // Retention Table
+    rows.push('Customer Retention %')
+    const retCohorts = Object.keys(retention_table).sort()
+    const retCols = Object.keys(Object.values(retention_table)[0] || {}).sort((a, b) => parseInt(a) - parseInt(b))
+    rows.push(['Cohort', ...retCols.map(c => `Month ${c}`)].join(','))
+    retCohorts.forEach(cohort => {
+      const rowData = retention_table[cohort] as Record<string, number>
+      rows.push([cohort, ...retCols.map(c => rowData[c]?.toFixed(1) || '')].join(','))
+    })
+    rows.push('')
+
+    // Revenue Table
+    if (revenue_table) {
+      rows.push('Revenue $')
+      const revCohorts = Object.keys(revenue_table).sort()
+      const revCols = Object.keys(Object.values(revenue_table)[0] || {}).sort((a, b) => parseInt(a) - parseInt(b))
+      rows.push(['Cohort', ...revCols.map(c => `Month ${c}`)].join(','))
+      revCohorts.forEach(cohort => {
+        const rowData = revenue_table[cohort] as Record<string, number>
+        rows.push([cohort, ...revCols.map(c => rowData[c]?.toFixed(2) || '')].join(','))
+      })
+    }
+
+    const csv = rows.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'cohort_analysis.csv'
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header with actions */}
@@ -90,6 +132,13 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
           </p>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={handleExportCSV}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-sm font-medium transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
           <button
             onClick={onReset}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-all duration-150 shadow-sm hover:shadow"
@@ -157,15 +206,15 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
         </div>
       )}
 
-      {/* Insights */}
+      {/* Insights - 2 columns x 3 rows grid */}
       {insights && insights.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Key Insights</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {insights.map((insight, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {insights.slice(0, 6).map((insight, index) => (
                 <div
                   key={index}
                   className={`p-4 rounded-lg border-l-4 ${
@@ -174,7 +223,7 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
                     'border-l-primary bg-primary/5'
                   }`}
                 >
-                  <p className="font-medium text-foreground">{insight.title}</p>
+                  <p className="font-semibold text-foreground">{insight.title}</p>
                   <p className="text-sm text-muted-foreground mt-1">{insight.text}</p>
                 </div>
               ))}

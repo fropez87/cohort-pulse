@@ -1,0 +1,6 @@
+claim_id,service_date,date_paid,billed_amount,amount_paid,payer,service_type
+CLM001,2024-01-15,2024-02-10,500.00,425.00,Blue Cross,Office Visit
+CLM001,2024-01-15,2024-03-05,500.00,50.00,Blue Cross,Office Visit
+CLM002,2024-02-20,2024-03-15,1200.00,960.00,Aetna,Lab Work
+CLM003,2024-01-10,2024-01-25,800.00,640.00,Blue Cross,Lab Work
+CLM004,2024-02-05,2024-02-28,350.00,280.00,Aetna,Office Visit
