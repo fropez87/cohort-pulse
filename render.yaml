@@ -11,9 +11,9 @@ services:
         value: "3.11"
     healthCheckPath: /health
 
-  # Frontend static site
+  # Frontend static site (new name to avoid conflict with existing Streamlit app)
   - type: web
-    name: cohort-pulse
+    name: cohort-pulse-app
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
