@@ -1,91 +1,160 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from './components/Header'
-import { LandingPage } from './components/LandingPage'
-import { MetricCard } from './components/MetricCard'
-import { InsightCard } from './components/InsightCard'
-import { RetentionCurve, CohortSizeChart } from './components/Charts'
-import { CohortHeatmap } from './components/CohortHeatmap'
+import { LandingPage, type AnalysisType } from './components/LandingPage'
+import { PayerMatrix } from './components/CohortHeatmap'
+import { RetentionDashboard } from './components/RetentionDashboard'
 import { DashboardSkeleton } from './components/LoadingState'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
-import type { AnalysisData } from './types'
-import {
-  ShoppingCart,
-  Users,
-  DollarSign,
-  TrendingUp,
-  Repeat,
-  Calendar,
-  Download,
-} from 'lucide-react'
+import type { UploadResponse, CohortMatrixData, FiltersData, RetentionAnalysisResponse } from './types'
+import { Download, RefreshCw } from 'lucide-react'
 
-const API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = '/api'
 
 function App() {
-  const [data, setData] = useState<AnalysisData | null>(null)
+  // Common state
+  const [analysisType, setAnalysisType] = useState<AnalysisType | null>(null)
+  const [isUploaded, setIsUploaded] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
 
-  const handleFileSelect = async (file: File) => {
+  // Waterfall state
+  const [matrixData, setMatrixData] = useState<CohortMatrixData | null>(null)
+  const [filters, setFilters] = useState<FiltersData>({ payers: [], service_types: [] })
+  const [selectedPayer, setSelectedPayer] = useState<string>('')
+  const [selectedServiceType, setSelectedServiceType] = useState<string>('')
+  const [rowCount, setRowCount] = useState(0)
+
+  // Retention state
+  const [retentionData, setRetentionData] = useState<RetentionAnalysisResponse | null>(null)
+
+  const handleFileSelect = async (file: File, type: AnalysisType) => {
     setIsLoading(true)
     setError(null)
-    setUploadedFile(file)
+    setAnalysisType(type)
 
     try {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await fetch(`${API_URL}/analyze`, {
-        method: 'POST',
-        body: formData,
-      })
+      if (type === 'waterfall') {
+        // Waterfall upload
+        const response = await fetch(`${API_URL}/upload`, {
+          method: 'POST',
+          body: formData,
+        })
 
-      const result: AnalysisData = await response.json()
+        if (!response.ok) {
+          throw new Error('Upload failed')
+        }
 
-      if (!result.success) {
-        throw new Error(result.error || 'Analysis failed')
+        const result: UploadResponse = await response.json()
+        setFilters(result.filters)
+        setRowCount(result.rows)
+        setIsUploaded(true)
+
+        // Fetch initial matrix
+        await fetchMatrix()
+      } else {
+        // Retention upload
+        const response = await fetch(`${API_URL}/analyze`, {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error('Analysis failed')
+        }
+
+        const result: RetentionAnalysisResponse = await response.json()
+        if (!result.success) {
+          throw new Error(result.error || 'Analysis failed')
+        }
+        setRetentionData(result)
+        setIsUploaded(true)
       }
-
-      setData(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
-      setData(null)
-      setUploadedFile(null)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleExport = async () => {
-    if (!uploadedFile) return
-
+  const fetchMatrix = async (payer?: string, serviceType?: string) => {
+    setIsLoading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', uploadedFile)
+      const params = new URLSearchParams()
+      if (payer) params.append('payer', payer)
+      if (serviceType) params.append('service_type', serviceType)
 
-      const response = await fetch(`${API_URL}/export`, {
-        method: 'POST',
-        body: formData,
-      })
-
+      const response = await fetch(`${API_URL}/cohort-matrix?${params}`)
       if (!response.ok) {
-        throw new Error('Export failed')
+        throw new Error('Failed to fetch matrix')
       }
 
-      // Download the Excel file
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'cohort_pulse_export.xlsx'
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      const data: CohortMatrixData = await response.json()
+      setMatrixData(data)
     } catch (err) {
-      alert('Export failed. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to load matrix')
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
+    if (isUploaded && analysisType === 'waterfall') {
+      fetchMatrix(selectedPayer || undefined, selectedServiceType || undefined)
+    }
+  }, [selectedPayer, selectedServiceType, isUploaded, analysisType])
+
+  const handleReset = () => {
+    setAnalysisType(null)
+    setIsUploaded(false)
+    setMatrixData(null)
+    setRetentionData(null)
+    setFilters({ payers: [], service_types: [] })
+    setSelectedPayer('')
+    setSelectedServiceType('')
+    setError(null)
+    setRowCount(0)
+  }
+
+  const handleExportCSV = () => {
+    if (!matrixData) return
+
+    const { matrix, payment_months, totals } = matrixData
+
+    // Build CSV header
+    const headers = ['DOS Month', 'Gross Charge', ...payment_months]
+    const rows = [headers.join(',')]
+
+    // Add data rows
+    matrix.forEach(row => {
+      const values = [
+        row.dos_month,
+        row.gross_charge,
+        ...payment_months.map(m => row.payments[m] || 0)
+      ]
+      rows.push(values.join(','))
+    })
+
+    // Add totals row
+    const totalValues = [
+      'Grand Totals',
+      totals.gross_charge,
+      ...payment_months.map(m => totals.payments[m] || 0)
+    ]
+    rows.push(totalValues.join(','))
+
+    const csv = rows.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'payer_waterfall.csv'
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
   }
 
   return (
@@ -94,7 +163,7 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Landing Page */}
-        {!data && !isLoading && (
+        {!isUploaded && !isLoading && (
           <LandingPage
             onFileSelect={handleFileSelect}
             isLoading={isLoading}
@@ -103,176 +172,102 @@ function App() {
         )}
 
         {/* Loading State */}
-        {isLoading && <DashboardSkeleton />}
+        {isLoading && !isUploaded && <DashboardSkeleton />}
 
-        {/* Dashboard */}
-        {data && data.success && (
-          <div className="space-y-8">
-            {/* Upload new file button */}
+        {/* Retention Dashboard */}
+        {isUploaded && analysisType === 'retention' && retentionData && (
+          <RetentionDashboard data={retentionData} onReset={handleReset} />
+        )}
+
+        {/* Waterfall Dashboard */}
+        {isUploaded && analysisType === 'waterfall' && (
+          <div className="space-y-6">
+            {/* Header with actions */}
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
+                <h2 className="text-2xl font-bold text-foreground">Payer Waterfall</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {data.summary?.date_range}
+                  {rowCount.toLocaleString()} payment records loaded
                 </p>
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={handleExport}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-sm font-medium transition-colors"
+                  onClick={handleExportCSV}
+                  disabled={!matrixData}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-sm font-medium transition-colors disabled:opacity-50"
                 >
                   <Download className="h-4 w-4" />
-                  Export
+                  Export CSV
                 </button>
                 <button
-                  onClick={() => {
-                    setData(null)
-                    setUploadedFile(null)
-                  }}
-                  className="px-4 py-2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-all duration-150 shadow-sm hover:shadow"
+                  onClick={handleReset}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-all duration-150 shadow-sm hover:shadow"
                 >
-                  New Analysis
+                  <RefreshCw className="h-4 w-4" />
+                  New File
                 </button>
               </div>
             </div>
 
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <MetricCard
-                title="Total Orders"
-                value={data.summary?.total_orders || 0}
-                icon={ShoppingCart}
-                format="number"
-                delay={0}
-              />
-              <MetricCard
-                title="Unique Customers"
-                value={data.summary?.unique_customers || 0}
-                icon={Users}
-                format="number"
-                delay={100}
-              />
-              <MetricCard
-                title="Total Revenue"
-                value={data.summary?.total_revenue || 0}
-                icon={DollarSign}
-                format="currency"
-                delay={200}
-              />
-              <MetricCard
-                title="Avg Order Value"
-                value={data.metrics?.aov || 0}
-                icon={TrendingUp}
-                format="currency"
-                delay={300}
-              />
-              <MetricCard
-                title="Lifetime Revenue"
-                value={data.metrics?.ltv || 0}
-                icon={Calendar}
-                format="currency"
-                delay={400}
-              />
-              <MetricCard
-                title="Repeat Rate"
-                value={data.metrics?.repeat_rate || 0}
-                icon={Repeat}
-                format="percent"
-                delay={500}
-              />
-            </div>
-
-            {/* Insights */}
-            {data.insights && data.insights.length > 0 && (
-              <Card className="opacity-0 animate-fade-in animate-delay-100">
-                <CardHeader>
-                  <CardTitle>Key Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {data.insights.map((insight, index) => (
-                      <InsightCard
-                        key={index}
-                        type={insight.type}
-                        title={insight.title}
-                        text={insight.text}
-                        delay={index * 100}
-                      />
-                    ))}
+            {/* Filters */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex gap-4 flex-wrap">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-foreground">Payer</label>
+                    <select
+                      value={selectedPayer}
+                      onChange={(e) => setSelectedPayer(e.target.value)}
+                      className="px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm min-w-[200px]"
+                    >
+                      <option value="">All Payers</option>
+                      {filters.payers.map(payer => (
+                        <option key={payer} value={payer}>{payer}</option>
+                      ))}
+                    </select>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {data.retention_curve && <RetentionCurve data={data.retention_curve} />}
-              {data.cohort_sizes && <CohortSizeChart data={data.cohort_sizes} />}
-            </div>
-
-            {/* Cohort Tables */}
-            <Card className="opacity-0 animate-fade-in animate-delay-400">
-              <CardHeader>
-                <CardTitle>Cohort Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="retention" className="w-full">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="retention">Customer Retention %</TabsTrigger>
-                    <TabsTrigger value="customers">Customer Count</TabsTrigger>
-                    <TabsTrigger value="revenue_retention">Revenue Retention %</TabsTrigger>
-                    <TabsTrigger value="revenue">Revenue $</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="retention">
-                    {data.retention_table && (
-                      <CohortHeatmap data={data.retention_table} type="retention" />
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="customers">
-                    {data.customer_table && (
-                      <CohortHeatmap data={data.customer_table} type="customers" />
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="revenue_retention">
-                    {data.revenue_retention_table && (
-                      <CohortHeatmap data={data.revenue_retention_table} type="revenue_retention" />
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="revenue">
-                    {data.revenue_table && (
-                      <CohortHeatmap data={data.revenue_table} type="revenue" />
-                    )}
-                  </TabsContent>
-                </Tabs>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-foreground">Service Type</label>
+                    <select
+                      value={selectedServiceType}
+                      onChange={(e) => setSelectedServiceType(e.target.value)}
+                      className="px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm min-w-[200px]"
+                    >
+                      <option value="">All Service Types</option>
+                      {filters.service_types.map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Footer / Disclaimer */}
+            {/* Matrix Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Aggregate Waterfall</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : matrixData && matrixData.matrix.length > 0 ? (
+                  <PayerMatrix data={matrixData} />
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No data available for the selected filters.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Footer */}
             <div className="border-t border-border pt-8 mt-8">
-              <div className="max-w-3xl mx-auto text-center space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Your data is processed locally in your browser and is not stored on our servers.
-                </p>
-                <div className="text-xs text-muted-foreground/70 space-y-2">
-                  <p>
-                    <strong>Disclaimer:</strong> This tool is provided for informational and educational purposes only.
-                    The analysis, metrics, and insights generated are based solely on the data you provide and may contain
-                    errors, inaccuracies, or omissions. We make no representations or warranties regarding the accuracy,
-                    completeness, or reliability of any results.
-                  </p>
-                  <p>
-                    Cohort Pulse does not verify the authenticity or validity of uploaded data. Any business decisions
-                    made based on this analysis are at your own risk. This tool should not be used as the sole basis
-                    for financial, strategic, or operational decisions. Always consult with qualified professionals
-                    and verify results independently before taking action.
-                  </p>
-                </div>
-                <p className="text-sm font-medium text-muted-foreground pt-2">Cohort Pulse</p>
-              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                Your data is processed locally and is not stored on our servers.
+              </p>
             </div>
           </div>
         )}

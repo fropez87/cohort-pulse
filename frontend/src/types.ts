@@ -1,4 +1,38 @@
-export interface AnalysisData {
+// Common types
+export type AnalysisType = 'retention' | 'waterfall'
+
+// Waterfall (Healthcare) types
+export interface WaterfallUploadResponse {
+  message: string
+  rows: number
+  filters: {
+    payers: string[]
+    service_types: string[]
+  }
+}
+
+export interface MatrixRow {
+  dos_month: string
+  gross_charge: number
+  payments: Record<string, number>
+}
+
+export interface CohortMatrixData {
+  matrix: MatrixRow[]
+  payment_months: string[]
+  totals: {
+    gross_charge: number
+    payments: Record<string, number>
+  }
+}
+
+export interface WaterfallFiltersData {
+  payers: string[]
+  service_types: string[]
+}
+
+// Retention (Subscription) types
+export interface RetentionAnalysisResponse {
   success: boolean
   error?: string
   summary?: {
@@ -6,25 +40,31 @@ export interface AnalysisData {
     unique_customers: number
     total_revenue: number
     date_range: string
-    num_cohorts: number
   }
   metrics?: {
-    ltv: number
     aov: number
+    ltv: number
     repeat_rate: number
-    avg_orders_per_customer: number
-    repeat_customers: number
-    one_time_customers: number
   }
   insights?: Array<{
-    type: 'positive' | 'warning' | 'info'
+    type: string
     title: string
     text: string
   }>
-  retention_table?: Record<string, Record<string, number | null>>
-  revenue_table?: Record<string, Record<string, number | null>>
-  customer_table?: Record<string, Record<string, number | null>>
-  revenue_retention_table?: Record<string, Record<string, number | null>>
-  cohort_sizes?: Array<{ cohort_month: string; new_customers: number }>
-  retention_curve?: Array<{ month: number; retention: number }>
+  retention_table?: Record<string, Record<string, number>>
+  revenue_table?: Record<string, Record<string, number>>
+  customer_table?: Record<string, Record<string, number>>
+  revenue_retention_table?: Record<string, Record<string, number>>
+  cohort_sizes?: Array<{
+    cohort_month: string
+    new_customers: number
+  }>
+  retention_curve?: Array<{
+    month: number
+    retention: number
+  }>
 }
+
+// Legacy aliases for backwards compatibility
+export type UploadResponse = WaterfallUploadResponse
+export type FiltersData = WaterfallFiltersData

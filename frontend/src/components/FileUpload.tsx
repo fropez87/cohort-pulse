@@ -6,9 +6,10 @@ import { cn } from '../lib/utils'
 interface FileUploadProps {
   onFileSelect: (file: File) => void
   isLoading?: boolean
+  columnChips?: string[]
 }
 
-export function FileUpload({ onFileSelect, isLoading }: FileUploadProps) {
+export function FileUpload({ onFileSelect, isLoading, columnChips = [] }: FileUploadProps) {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       onFileSelect(acceptedFiles[0])
@@ -59,17 +60,18 @@ export function FileUpload({ onFileSelect, isLoading }: FileUploadProps) {
           </p>
         </div>
 
-        <div className="flex gap-2 mt-2">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium">
-            order_date
-          </span>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium">
-            customer_id
-          </span>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium">
-            order_amount
-          </span>
-        </div>
+        {columnChips.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2 justify-center">
+            {columnChips.map((chip) => (
+              <span
+                key={chip}
+                className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

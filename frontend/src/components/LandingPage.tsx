@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { FileUpload } from './FileUpload'
 import { Card, CardContent } from './ui/card'
 import {
@@ -10,42 +11,193 @@ import {
   CheckCircle2,
   ArrowRight,
   Filter,
+  TrendingUp,
+  Building2,
+  Stethoscope,
 } from 'lucide-react'
+import { cn } from '../lib/utils'
+
+export type AnalysisType = 'retention' | 'waterfall'
 
 interface LandingPageProps {
-  onFileSelect: (file: File) => void
+  onFileSelect: (file: File, analysisType: AnalysisType) => void
   isLoading: boolean
   error: string | null
 }
 
-// Sample waterfall data for preview
-const sampleWaterfallData = [
-  { dos: '2024-01', gross: '125,000', jan: '45,000', feb: '32,000', mar: '18,000' },
-  { dos: '2024-02', gross: '142,000', jan: '', feb: '52,000', mar: '38,000' },
-  { dos: '2024-03', gross: '138,000', jan: '', feb: '', mar: '61,000' },
-]
+// Content configuration for each analysis type
+const analysisConfig = {
+  retention: {
+    badge: 'Customer retention analysis in seconds',
+    title: 'Turn your order data into',
+    titleHighlight: ' retention insights',
+    description: 'Upload a CSV with your customer orders to instantly see how retention and revenue flow over time by acquisition cohort.',
+    features: [
+      {
+        icon: Table2,
+        title: 'Retention Matrix',
+        description: 'Cohort months as rows, periods as columns showing customer retention percentages over time.',
+      },
+      {
+        icon: TrendingUp,
+        title: 'Revenue & LTV',
+        description: 'Track revenue retention, calculate customer lifetime value, and identify your best cohorts.',
+      },
+      {
+        icon: Download,
+        title: 'Excel Export',
+        description: 'Download all cohort tables as a formatted Excel file to share with your team.',
+      },
+    ],
+    requiredColumns: [
+      { name: 'order_date', description: 'Date of the order/transaction' },
+      { name: 'customer_id', description: 'Unique identifier for each customer' },
+      { name: 'order_amount', description: 'Revenue amount for the order' },
+    ],
+    sampleData: [
+      { order_date: '2024-01-15', customer_id: 'C001', order_amount: '99.99' },
+      { order_date: '2024-01-20', customer_id: 'C002', order_amount: '149.50' },
+      { order_date: '2024-02-10', customer_id: 'C001', order_amount: '79.99' },
+      { order_date: '2024-02-15', customer_id: 'C003', order_amount: '199.00' },
+    ],
+    sampleOutput: {
+      title: 'Customer Retention %',
+      headers: ['Cohort', 'Size', 'Month 0', 'Month 1', 'Month 2', 'Month 3'],
+      rows: [
+        { cohort: '2024-01', size: '1,250', m0: '100%', m1: '42%', m2: '28%', m3: '21%' },
+        { cohort: '2024-02', size: '1,480', m0: '100%', m1: '45%', m2: '31%', m3: '' },
+        { cohort: '2024-03', size: '1,320', m0: '100%', m1: '39%', m2: '', m3: '' },
+      ],
+    },
+    ctaTitle: 'Ready to analyze your customers?',
+    ctaDescription: 'Upload your order data and see your retention metrics instantly. No signup required.',
+    note: 'Customers are grouped by their first order month. Subsequent orders track retention.',
+    columnChips: ['order_date', 'customer_id', 'order_amount'],
+  },
+  waterfall: {
+    badge: 'Payment cohort analysis in seconds',
+    title: 'Turn your payment data into',
+    titleHighlight: ' collection insights',
+    description: 'Upload a CSV with your claims and payments to instantly see how collections flow over time by date of service cohort.',
+    features: [
+      {
+        icon: Table2,
+        title: 'Cohort Matrix',
+        description: 'DOS months as rows, payment months as columns showing exactly when cash hits for each service cohort.',
+      },
+      {
+        icon: Filter,
+        title: 'Payer & Service Filters',
+        description: 'Filter by payer and service type to drill down into specific collection patterns.',
+      },
+      {
+        icon: Download,
+        title: 'CSV Export',
+        description: 'Download the filtered matrix as a CSV to use in Excel or share with your team.',
+      },
+    ],
+    requiredColumns: [
+      { name: 'claim_id', description: 'Unique identifier per claim' },
+      { name: 'service_date', description: 'Date of service (DOS)' },
+      { name: 'date_paid', description: 'Date payment was received' },
+      { name: 'billed_amount', description: 'Gross charge amount' },
+      { name: 'amount_paid', description: 'Payment amount (can be negative)' },
+      { name: 'payer', description: 'Insurance/payer name' },
+      { name: 'service_type', description: 'Type of service' },
+    ],
+    sampleData: [
+      { claim_id: 'CLM001', service_date: '2024-01-15', date_paid: '2024-02-10', billed_amount: '500.00', amount_paid: '425.00', payer: 'Blue Cross', service_type: 'Office Visit' },
+      { claim_id: 'CLM001', service_date: '2024-01-15', date_paid: '2024-03-05', billed_amount: '500.00', amount_paid: '50.00', payer: 'Blue Cross', service_type: 'Office Visit' },
+      { claim_id: 'CLM002', service_date: '2024-02-20', date_paid: '2024-03-15', billed_amount: '1200.00', amount_paid: '960.00', payer: 'Aetna', service_type: 'Lab Work' },
+    ],
+    sampleOutput: {
+      title: 'Aggregate Waterfall',
+      headers: ['DOS Month', 'Gross Charge', '2024-01', '2024-02', '2024-03'],
+      rows: [
+        { dos: '2024-01', gross: '125,000', m1: '45,000', m2: '32,000', m3: '18,000' },
+        { dos: '2024-02', gross: '142,000', m1: '', m2: '52,000', m3: '38,000' },
+        { dos: '2024-03', gross: '138,000', m1: '', m2: '', m3: '61,000' },
+      ],
+      totals: { label: 'Grand Totals', gross: '405,000', m1: '45,000', m2: '84,000', m3: '117,000' },
+    },
+    ctaTitle: 'Ready to analyze your payments?',
+    ctaDescription: 'Upload your payment data and see your collection waterfall instantly. No signup required.',
+    note: 'Multiple payments per claim are supported - the same claim_id can appear multiple times with different payment dates. Gross charge is deduplicated by claim_id.',
+    columnChips: ['claim_id', 'service_date', 'date_paid', 'amount_paid', 'payer'],
+  },
+}
 
 export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps) {
+  const [analysisType, setAnalysisType] = useState<AnalysisType>('retention')
+  const config = analysisConfig[analysisType]
+
+  const handleFileSelect = (file: File) => {
+    onFileSelect(file, analysisType)
+  }
+
   return (
     <div className="space-y-16 pb-16">
       {/* Hero Section */}
       <section className="max-w-4xl mx-auto text-center pt-8 animate-fade-in">
+        {/* Analysis Type Toggle */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => setAnalysisType('retention')}
+              className={cn(
+                "flex items-center gap-3 px-6 py-4 rounded-xl text-base font-semibold transition-all duration-200 border-2",
+                analysisType === 'retention'
+                  ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25 scale-[1.02]"
+                  : "bg-white text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:shadow-md"
+              )}
+            >
+              <Building2 className={cn("h-5 w-5", analysisType === 'retention' ? "text-primary-foreground" : "text-primary")} />
+              <div className="text-left">
+                <div>Subscription Business</div>
+                <div className={cn("text-xs font-normal", analysisType === 'retention' ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                  Retention Analytics
+                </div>
+              </div>
+            </button>
+            <button
+              onClick={() => setAnalysisType('waterfall')}
+              className={cn(
+                "flex items-center gap-3 px-6 py-4 rounded-xl text-base font-semibold transition-all duration-200 border-2",
+                analysisType === 'waterfall'
+                  ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25 scale-[1.02]"
+                  : "bg-white text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:shadow-md"
+              )}
+            >
+              <Stethoscope className={cn("h-5 w-5", analysisType === 'waterfall' ? "text-primary-foreground" : "text-primary")} />
+              <div className="text-left">
+                <div>Healthcare Business</div>
+                <div className={cn("text-xs font-normal", analysisType === 'waterfall' ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                  Payer Waterfall
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
           <Zap className="h-4 w-4" />
-          Payment cohort analysis in seconds
+          {config.badge}
         </div>
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
-          Turn your payment data into
-          <span className="text-primary"> collection insights</span>
+          {config.title}
+          <span className="text-primary">{config.titleHighlight}</span>
         </h1>
         <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Upload a CSV with your claims and payments to instantly see how collections
-          flow over time by date of service cohort.
+          {config.description}
         </p>
 
         {/* Upload Section */}
         <div className="max-w-xl mx-auto mb-6">
-          <FileUpload onFileSelect={onFileSelect} isLoading={isLoading} />
+          <FileUpload
+            onFileSelect={handleFileSelect}
+            isLoading={isLoading}
+            columnChips={config.columnChips}
+          />
           {error && (
             <div className="mt-4 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
               {error}
@@ -65,21 +217,14 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
           What you'll get
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <FeatureCard
-            icon={Table2}
-            title="Cohort Matrix"
-            description="DOS months as rows, payment months as columns showing exactly when cash hits for each service cohort."
-          />
-          <FeatureCard
-            icon={Filter}
-            title="Payer & Service Filters"
-            description="Filter by payer and service type to drill down into specific collection patterns."
-          />
-          <FeatureCard
-            icon={Download}
-            title="CSV Export"
-            description="Download the filtered matrix as a CSV to use in Excel or share with your team."
-          />
+          {config.features.map((feature, index) => (
+            <FeatureCard
+              key={index}
+              icon={feature.icon}
+              title={feature.title}
+              description={feature.description}
+            />
+          ))}
         </div>
       </section>
 
@@ -96,7 +241,7 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
                   File Format Requirements
                 </h3>
                 <p className="text-muted-foreground">
-                  Your CSV file should contain payment-level data with these columns:
+                  Your CSV file should contain {analysisType === 'retention' ? 'order-level' : 'payment-level'} data with these columns:
                 </p>
               </div>
             </div>
@@ -105,25 +250,17 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
               <div>
                 <h4 className="font-medium text-foreground mb-3">Required Columns</h4>
                 <ul className="space-y-2">
-                  <RequirementItem text="claim_id" required />
-                  <RequirementItem text="service_date" required />
-                  <RequirementItem text="date_paid" required />
-                  <RequirementItem text="billed_amount" required />
-                  <RequirementItem text="amount_paid" required />
-                  <RequirementItem text="payer" required />
-                  <RequirementItem text="service_type" required />
+                  {config.requiredColumns.map((col) => (
+                    <RequirementItem key={col.name} text={col.name} required />
+                  ))}
                 </ul>
               </div>
               <div>
                 <h4 className="font-medium text-foreground mb-3">Column Descriptions</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><strong>claim_id</strong> - Unique identifier per claim</li>
-                  <li><strong>service_date</strong> - Date of service (DOS)</li>
-                  <li><strong>date_paid</strong> - Date payment was received</li>
-                  <li><strong>billed_amount</strong> - Gross charge amount</li>
-                  <li><strong>amount_paid</strong> - Payment amount (can be negative)</li>
-                  <li><strong>payer</strong> - Insurance/payer name</li>
-                  <li><strong>service_type</strong> - Type of service</li>
+                  {config.requiredColumns.map((col) => (
+                    <li key={col.name}><strong>{col.name}</strong> - {col.description}</li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -134,51 +271,30 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">claim_id</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">service_date</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">date_paid</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">billed_amount</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">amount_paid</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">payer</th>
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">service_type</th>
+                      {config.requiredColumns.map((col) => (
+                        <th key={col.name} className="text-left py-2 px-2 font-medium text-muted-foreground">
+                          {col.name}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="font-mono text-xs">
-                    <tr className="border-b border-border/50">
-                      <td className="py-2 px-2">CLM001</td>
-                      <td className="py-2 px-2">2024-01-15</td>
-                      <td className="py-2 px-2">2024-02-10</td>
-                      <td className="py-2 px-2">500.00</td>
-                      <td className="py-2 px-2">425.00</td>
-                      <td className="py-2 px-2">Blue Cross</td>
-                      <td className="py-2 px-2">Office Visit</td>
-                    </tr>
-                    <tr className="border-b border-border/50">
-                      <td className="py-2 px-2">CLM001</td>
-                      <td className="py-2 px-2">2024-01-15</td>
-                      <td className="py-2 px-2">2024-03-05</td>
-                      <td className="py-2 px-2">500.00</td>
-                      <td className="py-2 px-2">50.00</td>
-                      <td className="py-2 px-2">Blue Cross</td>
-                      <td className="py-2 px-2">Office Visit</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-2">CLM002</td>
-                      <td className="py-2 px-2">2024-02-20</td>
-                      <td className="py-2 px-2">2024-03-15</td>
-                      <td className="py-2 px-2">1200.00</td>
-                      <td className="py-2 px-2">960.00</td>
-                      <td className="py-2 px-2">Aetna</td>
-                      <td className="py-2 px-2">Lab Work</td>
-                    </tr>
+                    {config.sampleData.map((row, index) => (
+                      <tr key={index} className={index < config.sampleData.length - 1 ? 'border-b border-border/50' : ''}>
+                        {config.requiredColumns.map((col) => (
+                          <td key={col.name} className="py-2 px-2">
+                            {(row as Record<string, string>)[col.name]}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
 
             <p className="text-sm text-muted-foreground mt-4">
-              <strong>Note:</strong> Multiple payments per claim are supported - the same claim_id can appear
-              multiple times with different payment dates. Gross charge is deduplicated by claim_id.
+              <strong>Note:</strong> {config.note}
             </p>
           </CardContent>
         </Card>
@@ -190,40 +306,64 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
           Sample Output Preview
         </h2>
         <p className="text-muted-foreground text-center mb-8">
-          Here's what your waterfall matrix will look like
+          Here's what your {analysisType === 'retention' ? 'retention matrix' : 'waterfall matrix'} will look like
         </p>
 
         <Card>
           <CardContent className="p-6">
-            <h3 className="font-semibold text-foreground mb-4">Aggregate Waterfall</h3>
+            <h3 className="font-semibold text-foreground mb-4">{config.sampleOutput.title}</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm font-mono">
                 <thead>
                   <tr className="border-b border-border bg-muted">
-                    <th className="text-left py-2 px-3 font-semibold text-foreground">DOS Month</th>
-                    <th className="text-right py-2 px-3 font-semibold text-foreground bg-blue-50">Gross Charge</th>
-                    <th className="text-right py-2 px-3 font-semibold text-foreground">2024-01</th>
-                    <th className="text-right py-2 px-3 font-semibold text-foreground">2024-02</th>
-                    <th className="text-right py-2 px-3 font-semibold text-foreground">2024-03</th>
+                    {config.sampleOutput.headers.map((header, index) => (
+                      <th
+                        key={index}
+                        className={cn(
+                          "py-2 px-3 font-semibold text-foreground",
+                          index === 0 ? "text-left" : "text-right",
+                          analysisType === 'waterfall' && index === 1 && "bg-blue-50"
+                        )}
+                      >
+                        {header}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {sampleWaterfallData.map((row, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                      <td className="py-2 px-3 font-medium">{row.dos}</td>
-                      <td className="py-2 px-3 text-right bg-blue-50/50 font-semibold">{row.gross}</td>
-                      <td className="py-2 px-3 text-right">{row.jan}</td>
-                      <td className="py-2 px-3 text-right">{row.feb}</td>
-                      <td className="py-2 px-3 text-right">{row.mar}</td>
-                    </tr>
-                  ))}
-                  <tr className="bg-muted font-bold border-t-2">
-                    <td className="py-2 px-3">Grand Totals</td>
-                    <td className="py-2 px-3 text-right bg-blue-100">405,000</td>
-                    <td className="py-2 px-3 text-right">45,000</td>
-                    <td className="py-2 px-3 text-right">84,000</td>
-                    <td className="py-2 px-3 text-right">117,000</td>
-                  </tr>
+                  {analysisType === 'retention' ? (
+                    config.sampleOutput.rows.map((row: any, index: number) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                        <td className="py-2 px-3 font-medium">{row.cohort}</td>
+                        <td className="py-2 px-3 text-right">{row.size}</td>
+                        <td className="py-2 px-3 text-right">{row.m0}</td>
+                        <td className="py-2 px-3 text-right">{row.m1}</td>
+                        <td className="py-2 px-3 text-right">{row.m2}</td>
+                        <td className="py-2 px-3 text-right">{row.m3}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <>
+                      {config.sampleOutput.rows.map((row: any, index: number) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                          <td className="py-2 px-3 font-medium">{row.dos}</td>
+                          <td className="py-2 px-3 text-right bg-blue-50/50 font-semibold">{row.gross}</td>
+                          <td className="py-2 px-3 text-right">{row.m1}</td>
+                          <td className="py-2 px-3 text-right">{row.m2}</td>
+                          <td className="py-2 px-3 text-right">{row.m3}</td>
+                        </tr>
+                      ))}
+                      {(config.sampleOutput as any).totals && (
+                        <tr className="bg-muted font-bold border-t-2">
+                          <td className="py-2 px-3">{(config.sampleOutput as any).totals.label}</td>
+                          <td className="py-2 px-3 text-right bg-blue-100">{(config.sampleOutput as any).totals.gross}</td>
+                          <td className="py-2 px-3 text-right">{(config.sampleOutput as any).totals.m1}</td>
+                          <td className="py-2 px-3 text-right">{(config.sampleOutput as any).totals.m2}</td>
+                          <td className="py-2 px-3 text-right">{(config.sampleOutput as any).totals.m3}</td>
+                        </tr>
+                      )}
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -236,10 +376,10 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-8">
             <h2 className="text-2xl font-bold text-foreground mb-4">
-              Ready to analyze your payments?
+              {config.ctaTitle}
             </h2>
             <p className="text-muted-foreground mb-6">
-              Upload your payment data and see your collection waterfall instantly. No signup required.
+              {config.ctaDescription}
             </p>
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
