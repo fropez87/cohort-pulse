@@ -34,7 +34,8 @@
       "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Add polished landing page with features, file format guide, and sample output\")",
       "Bash(git -C \"c:/Users/glope/cohort-analysis\" push origin main)",
       "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Add Open Graph and Twitter Card meta tags for link previews\")",
-      "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Add Google Analytics 4 tracking\")"
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Add Google Analytics 4 tracking\")",
+      "Bash(git -C \"c:/Users/glope/cohort-analysis\" commit -m \"Use dynamic OG image service for link previews\")"
     ]
   }
 }
