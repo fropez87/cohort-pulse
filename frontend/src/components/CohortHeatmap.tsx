@@ -38,7 +38,7 @@ export function PayerMatrix({ data, displayMode = 'dollars' }: PayerMatrixProps)
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm font-mono">
+      <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-muted">
             <th className="sticky left-0 z-10 bg-muted p-3 text-left text-xs font-semibold text-foreground border-b border-r border-border whitespace-nowrap">
