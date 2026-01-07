@@ -598,11 +598,13 @@ async def upload_file(file: UploadFile = File(...)):
     """Upload and process a CSV file for payer waterfall analysis."""
     try:
         contents = await file.read()
-        # Handle BOM and various encodings
+        # Handle BOM and various encodings, normalize line endings
         try:
             decoded = contents.decode("utf-8-sig")
         except UnicodeDecodeError:
             decoded = contents.decode("utf-8", errors="ignore")
+        # Normalize line endings (Windows \r\n -> \n)
+        decoded = decoded.replace('\r\n', '\n').replace('\r', '\n')
         df = pd.read_csv(io.StringIO(decoded))
 
         # Handle comma-formatted numbers (e.g., "5,493.00" -> 5493.00)
@@ -671,4 +673,4 @@ async def get_cohort_matrix(request: MatrixRequest):
 
 # Handler for Vercel serverless
 handler = Mangum(app)
-# Version 2.2 - fix BOM encoding for healthcare CSV uploads
+# Version 2.3 - fix line endings for healthcare CSV uploads
