@@ -376,7 +376,12 @@ def table_to_dict(df):
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "version": "2.5"}
+
+
+@app.get("/api/version")
+async def get_version():
+    return {"version": "2.5", "feature": "debug-info-on-error"}
 
 
 @app.post("/api/analyze")
