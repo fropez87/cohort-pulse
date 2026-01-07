@@ -3,3 +3,4 @@ python-multipart>=0.0.6
 pandas>=2.0.0
 numpy>=1.24.0
 mangum>=0.17.0
+# Force rebuild: v2.5
