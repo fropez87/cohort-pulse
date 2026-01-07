@@ -190,31 +190,49 @@ def get_retention_curve(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame, metrics: dict, cohort_sizes: pd.DataFrame) -> list:
-    """Generate automatic insights from the cohort data."""
-    insights = []
+    """Generate automatic insights from the cohort data. Always returns exactly 6 insights."""
+    # Start with guaranteed insights (always show these 3)
+    guaranteed = []
+    conditional = []
 
     try:
-        # 1. Repeat purchase rate (always shows)
+        # GUARANTEED 1: Repeat purchase rate
         if metrics['repeat_rate'] >= 30:
-            insights.append({
+            guaranteed.append({
                 'type': 'positive',
                 'title': 'Strong repeat purchases',
                 'text': f"{metrics['repeat_rate']:.1f}% of customers have made more than one purchase."
             })
         elif metrics['repeat_rate'] < 15:
-            insights.append({
+            guaranteed.append({
                 'type': 'warning',
                 'title': 'Low repeat rate',
                 'text': f"Only {metrics['repeat_rate']:.1f}% of customers return. Consider retention strategies."
             })
         else:
-            insights.append({
+            guaranteed.append({
                 'type': 'info',
                 'title': 'Repeat purchase rate',
                 'text': f"{metrics['repeat_rate']:.1f}% of customers have made more than one purchase."
             })
 
-        # 2. Top performing cohort
+        # GUARANTEED 2: Lifetime Revenue
+        if metrics['ltv'] > 0:
+            guaranteed.append({
+                'type': 'info',
+                'title': 'Lifetime Revenue',
+                'text': f"Average lifetime revenue per customer is ${metrics['ltv']:.2f}."
+            })
+
+        # GUARANTEED 3: Average Order Value
+        if metrics['aov'] > 0:
+            guaranteed.append({
+                'type': 'info',
+                'title': 'Average Order Value',
+                'text': f"Customers spend an average of ${metrics['aov']:.2f} per order."
+            })
+
+        # CONDITIONAL: Top performing cohort
         if 'Month 1' in retention_table.columns:
             month1_retention = retention_table['Month 1'].dropna()
             if len(month1_retention) > 1:
@@ -222,65 +240,108 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame, metrics: 
                 best_retention = month1_retention.max()
                 avg_retention = month1_retention.mean()
 
-                if avg_retention > 0 and best_retention > avg_retention * 1.2:
-                    insights.append({
+                if avg_retention > 0 and best_retention > avg_retention * 1.1:
+                    conditional.append({
                         'type': 'positive',
                         'title': 'Top performing cohort',
                         'text': f"{best_cohort} cohort has {best_retention:.1f}% Month 1 retention, {((best_retention - avg_retention) / avg_retention * 100):.0f}% above average."
                     })
 
-        # 3. Underperforming cohort
+        # CONDITIONAL: Underperforming cohort
         if 'Month 1' in retention_table.columns:
             month1_retention = retention_table['Month 1'].dropna()
             if len(month1_retention) > 1:
                 worst_cohort = month1_retention.idxmin()
                 worst_retention = month1_retention.min()
                 avg_retention = month1_retention.mean()
-                if avg_retention > 0 and worst_retention < avg_retention * 0.7:
-                    insights.append({
+                if avg_retention > 0 and worst_retention < avg_retention * 0.8:
+                    conditional.append({
                         'type': 'warning',
                         'title': 'Underperforming cohort',
                         'text': f"{worst_cohort} cohort has only {worst_retention:.1f}% Month 1 retention."
                     })
 
-        # 4. Cohort size trend
+        # CONDITIONAL: Cohort size trend
         if len(cohort_sizes) >= 3:
             sizes = cohort_sizes['new_customers'].tolist()
             recent_avg = sum(sizes[-3:]) / 3
             earlier_avg = sum(sizes[:3]) / 3
             if earlier_avg > 0:
                 change_pct = ((recent_avg - earlier_avg) / earlier_avg) * 100
-                if change_pct < -30:
-                    insights.append({
+                if change_pct < -20:
+                    conditional.append({
                         'type': 'warning',
                         'title': 'Declining acquisition',
                         'text': f"Recent cohorts are {abs(change_pct):.0f}% smaller than earlier ones."
                     })
-                elif change_pct > 30:
-                    insights.append({
+                elif change_pct > 20:
+                    conditional.append({
                         'type': 'positive',
                         'title': 'Growing acquisition',
                         'text': f"Recent cohorts are {change_pct:.0f}% larger than earlier ones."
                     })
 
-        # 5. Lifetime Revenue (always shows)
-        if metrics['ltv'] > 0:
-            insights.append({
-                'type': 'info',
-                'title': 'Lifetime Revenue',
-                'text': f"Average lifetime revenue per customer is ${metrics['ltv']:.2f}."
-            })
+        # CONDITIONAL: Month 1 to Month 2 drop-off
+        if 'Month 1' in retention_table.columns and 'Month 2' in retention_table.columns:
+            m1 = retention_table['Month 1'].dropna().mean()
+            m2 = retention_table['Month 2'].dropna().mean()
+            if m1 > 0 and m2 > 0:
+                dropoff = m1 - m2
+                if dropoff > 15:
+                    conditional.append({
+                        'type': 'warning',
+                        'title': 'High early churn',
+                        'text': f"You lose {dropoff:.1f}% of customers between Month 1 and Month 2."
+                    })
+                elif dropoff < 5:
+                    conditional.append({
+                        'type': 'positive',
+                        'title': 'Strong retention curve',
+                        'text': f"Only {dropoff:.1f}% drop-off between Month 1 and Month 2."
+                    })
 
-        # 6. Average Order Value (always shows)
-        if metrics['aov'] > 0:
-            insights.append({
-                'type': 'info',
-                'title': 'Average order value',
-                'text': f"Customers spend an average of ${metrics['aov']:.2f} per order."
-            })
+        # CONDITIONAL: Best retention month
+        if len(retention_table.columns) >= 3:
+            avg_retention_by_month = retention_table.mean()
+            if len(avg_retention_by_month) > 2:
+                # Find which month has best average retention (excluding Month 0)
+                month_cols = [c for c in retention_table.columns if c != 'Month 0']
+                if month_cols:
+                    best_month = avg_retention_by_month[month_cols].idxmax()
+                    best_val = avg_retention_by_month[month_cols].max()
+                    conditional.append({
+                        'type': 'info',
+                        'title': 'Best retention period',
+                        'text': f"{best_month} shows the highest average retention at {best_val:.1f}%."
+                    })
 
     except Exception:
         pass
+
+    # Combine: guaranteed first, then fill remaining slots with conditional
+    insights = guaranteed + conditional[:6 - len(guaranteed)]
+
+    # If we still don't have 6, pad with generic insights
+    while len(insights) < 6:
+        if len(insights) == 3:
+            insights.append({
+                'type': 'info',
+                'title': 'Data coverage',
+                'text': f"Analysis includes {len(cohort_sizes)} monthly cohorts."
+            })
+        elif len(insights) == 4:
+            total_customers = int(cohort_sizes['new_customers'].sum()) if len(cohort_sizes) > 0 else 0
+            insights.append({
+                'type': 'info',
+                'title': 'Customer base',
+                'text': f"Total of {total_customers:,} unique customers analyzed."
+            })
+        else:
+            insights.append({
+                'type': 'info',
+                'title': 'Retention analysis',
+                'text': "Track cohort behavior over time to identify trends."
+            })
 
     return insights[:6]
 
@@ -361,6 +422,122 @@ async def analyze_cohorts(file: UploadFile = File(...)):
 
 # ============ WATERFALL FUNCTIONS ============
 
+def generate_waterfall_insights(df: pd.DataFrame, matrix_data: dict) -> list:
+    """Generate insights for healthcare waterfall analysis. Always returns 6 insights."""
+    insights = []
+
+    try:
+        total_billed = df['billed_amount'].sum()
+        total_collected = df['amount_paid'].sum()
+        collection_rate = (total_collected / total_billed * 100) if total_billed > 0 else 0
+
+        # 1. Collection Rate
+        if collection_rate >= 90:
+            insights.append({
+                'type': 'positive',
+                'title': 'Excellent collection rate',
+                'text': f"Collecting {collection_rate:.1f}% of billed charges."
+            })
+        elif collection_rate >= 70:
+            insights.append({
+                'type': 'info',
+                'title': 'Collection rate',
+                'text': f"Collecting {collection_rate:.1f}% of billed charges."
+            })
+        else:
+            insights.append({
+                'type': 'warning',
+                'title': 'Low collection rate',
+                'text': f"Only collecting {collection_rate:.1f}% of billed charges."
+            })
+
+        # 2. Total Revenue
+        insights.append({
+            'type': 'info',
+            'title': 'Total collected',
+            'text': f"${total_collected:,.0f} collected from ${total_billed:,.0f} billed."
+        })
+
+        # 3. Average days to payment
+        df_copy = df.copy()
+        df_copy['days_to_pay'] = (df_copy['date_paid'] - df_copy['service_date']).dt.days
+        avg_days = df_copy['days_to_pay'].mean()
+        if avg_days <= 30:
+            insights.append({
+                'type': 'positive',
+                'title': 'Fast payments',
+                'text': f"Average {avg_days:.0f} days from service to payment."
+            })
+        elif avg_days <= 60:
+            insights.append({
+                'type': 'info',
+                'title': 'Payment timing',
+                'text': f"Average {avg_days:.0f} days from service to payment."
+            })
+        else:
+            insights.append({
+                'type': 'warning',
+                'title': 'Slow payments',
+                'text': f"Average {avg_days:.0f} days from service to payment."
+            })
+
+        # 4. Payer analysis
+        payer_totals = df.groupby('payer').agg({
+            'billed_amount': 'sum',
+            'amount_paid': 'sum'
+        })
+        payer_totals['rate'] = payer_totals['amount_paid'] / payer_totals['billed_amount'] * 100
+
+        best_payer = payer_totals['rate'].idxmax()
+        best_rate = payer_totals['rate'].max()
+        insights.append({
+            'type': 'positive',
+            'title': 'Top performing payer',
+            'text': f"{best_payer} has the highest collection rate at {best_rate:.1f}%."
+        })
+
+        # 5. Worst payer (if significantly different)
+        worst_payer = payer_totals['rate'].idxmin()
+        worst_rate = payer_totals['rate'].min()
+        if worst_rate < best_rate * 0.7:
+            insights.append({
+                'type': 'warning',
+                'title': 'Underperforming payer',
+                'text': f"{worst_payer} has the lowest collection rate at {worst_rate:.1f}%."
+            })
+        else:
+            # Service type mix
+            service_mix = df.groupby('service_type')['amount_paid'].sum()
+            top_service = service_mix.idxmax()
+            top_revenue = service_mix.max()
+            insights.append({
+                'type': 'info',
+                'title': 'Top service type',
+                'text': f"{top_service} generates the most revenue at ${top_revenue:,.0f}."
+            })
+
+        # 6. Claims volume
+        unique_claims = df['claim_id'].nunique()
+        insights.append({
+            'type': 'info',
+            'title': 'Claims processed',
+            'text': f"{unique_claims:,} unique claims analyzed."
+        })
+
+    except Exception:
+        pass
+
+    # Pad if needed
+    while len(insights) < 6:
+        insights.append({
+            'type': 'info',
+            'title': 'Revenue analysis',
+            'text': 'Track payment patterns across service months.'
+        })
+
+    return insights[:6]
+
+
 def calculate_waterfall_matrix(df: pd.DataFrame, payer: str = None, service_type: str = None):
     """Calculate the cohort matrix from dataframe."""
     df = df.copy()
@@ -423,6 +600,12 @@ async def upload_file(file: UploadFile = File(...)):
         contents = await file.read()
         df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
 
+        # Handle comma-formatted numbers (e.g., "5,493.00" -> 5493.00)
+        if "billed_amount" in df.columns:
+            df["billed_amount"] = df["billed_amount"].replace(r'[\$,]', '', regex=True).astype(float)
+        if "amount_paid" in df.columns:
+            df["amount_paid"] = df["amount_paid"].replace(r'[\$,]', '', regex=True).astype(float)
+
         df["service_date"] = pd.to_datetime(df["service_date"])
         df["date_paid"] = pd.to_datetime(df["date_paid"])
 
@@ -430,6 +613,7 @@ async def upload_file(file: UploadFile = File(...)):
         service_types = sorted(df["service_type"].dropna().unique().tolist())
 
         matrix_data = calculate_waterfall_matrix(df)
+        insights = generate_waterfall_insights(df, matrix_data)
 
         records = df.to_dict(orient='records')
         for r in records:
@@ -446,7 +630,8 @@ async def upload_file(file: UploadFile = File(...)):
             "data": records,
             "matrix": matrix_data["matrix"],
             "payment_months": matrix_data["payment_months"],
-            "totals": matrix_data["totals"]
+            "totals": matrix_data["totals"],
+            "insights": insights
         }
 
     except Exception as e:

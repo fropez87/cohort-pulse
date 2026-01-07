@@ -2,6 +2,12 @@
 export type AnalysisType = 'retention' | 'waterfall'
 
 // Waterfall (Healthcare) types
+export interface Insight {
+  type: 'positive' | 'warning' | 'info'
+  title: string
+  text: string
+}
+
 export interface WaterfallUploadResponse {
   message: string
   rows: number
@@ -17,6 +23,7 @@ export interface WaterfallUploadResponse {
     gross_charge: number
     payments: Record<string, number>
   }
+  insights?: Insight[]
 }
 
 export interface MatrixRow {

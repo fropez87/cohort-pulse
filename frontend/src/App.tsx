@@ -5,7 +5,7 @@ import { PayerMatrix, type DisplayMode } from './components/CohortHeatmap'
 import { RetentionDashboard } from './components/RetentionDashboard'
 import { AnalyzingOverlay } from './components/LoadingState'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
-import type { UploadResponse, CohortMatrixData, FiltersData, RetentionAnalysisResponse } from './types'
+import type { UploadResponse, CohortMatrixData, FiltersData, RetentionAnalysisResponse, Insight } from './types'
 import { Download, RefreshCw } from 'lucide-react'
 
 const API_URL = '/api'
@@ -25,6 +25,7 @@ function App() {
   const [rowCount, setRowCount] = useState(0)
   const [rawData, setRawData] = useState<Array<Record<string, unknown>>>([])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('dollars')
+  const [waterfallInsights, setWaterfallInsights] = useState<Insight[]>([])
 
   // Retention state
   const [retentionData, setRetentionData] = useState<RetentionAnalysisResponse | null>(null)
@@ -68,6 +69,11 @@ function App() {
         } else {
           // Fallback to fetching matrix (for local dev with stateful backend)
           await fetchMatrix()
+        }
+
+        // Store insights
+        if (result.insights) {
+          setWaterfallInsights(result.insights)
         }
 
         setIsUploaded(true)
@@ -162,6 +168,7 @@ function App() {
     setRowCount(0)
     setRawData([])
     setDisplayMode('dollars')
+    setWaterfallInsights([])
   }
 
   const handleExportCSV = () => {
@@ -307,6 +314,32 @@ function App() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Key Insights */}
+            {waterfallInsights.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Key Insights</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {waterfallInsights.slice(0, 6).map((insight, index) => (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-lg border-l-4 ${
+                          insight.type === 'positive' ? 'border-l-green-500 bg-green-500/10' :
+                          insight.type === 'warning' ? 'border-l-yellow-500 bg-yellow-500/10' :
+                          'border-l-primary bg-primary/10'
+                        }`}
+                      >
+                        <p className="font-semibold text-foreground">{insight.title}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{insight.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Matrix Table */}
             <Card>
