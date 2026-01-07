@@ -376,7 +376,7 @@ def table_to_dict(df):
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "version": "2.5"}
+    return {"status": "healthy", "version": "2.6"}
 
 
 @app.get("/api/version")
@@ -686,4 +686,4 @@ async def get_cohort_matrix(request: MatrixRequest):
 
 # Handler for Vercel serverless
 handler = Mangum(app)
-# Version 2.5 - add debug info to error response
+# Version 2.6 - force redeploy for serverless function cache refresh
