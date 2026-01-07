@@ -10,6 +10,7 @@ from typing import Optional, Tuple
 import pandas as pd
 import numpy as np
 import io
+from mangum import Mangum
 
 app = FastAPI()
 
@@ -443,3 +444,7 @@ async def get_cohort_matrix(request: MatrixRequest):
 
     except Exception as e:
         return {"error": str(e)}
+
+
+# Handler for Vercel serverless
+handler = Mangum(app)
