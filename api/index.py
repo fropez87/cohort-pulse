@@ -12,7 +12,7 @@ import numpy as np
 import io
 
 # Import cohort analysis functions
-from .cohort_analysis import (
+from cohort_analysis import (
     load_and_validate_data,
     calculate_cohorts,
     build_retention_table,
