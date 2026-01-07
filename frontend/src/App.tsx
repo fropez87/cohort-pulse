@@ -3,7 +3,7 @@ import { Header } from './components/Header'
 import { LandingPage, type AnalysisType } from './components/LandingPage'
 import { PayerMatrix, type DisplayMode } from './components/CohortHeatmap'
 import { RetentionDashboard } from './components/RetentionDashboard'
-import { DashboardSkeleton } from './components/LoadingState'
+import { AnalyzingOverlay } from './components/LoadingState'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import type { UploadResponse, CohortMatrixData, FiltersData, RetentionAnalysisResponse } from './types'
 import { Download, RefreshCw } from 'lucide-react'
@@ -218,7 +218,7 @@ function App() {
         )}
 
         {/* Loading State */}
-        {isLoading && !isUploaded && <DashboardSkeleton />}
+        {isLoading && !isUploaded && <AnalyzingOverlay />}
 
         {/* Retention Dashboard */}
         {isUploaded && analysisType === 'retention' && retentionData && (

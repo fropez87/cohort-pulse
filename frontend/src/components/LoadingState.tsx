@@ -54,3 +54,18 @@ export function Spinner() {
     </div>
   )
 }
+
+export function AnalyzingOverlay() {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
+      <div className="relative">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-full bg-primary/10" />
+        </div>
+      </div>
+      <p className="mt-6 text-lg font-medium text-foreground">Analyzing your data...</p>
+      <p className="mt-2 text-sm text-muted-foreground">This usually takes just a few seconds</p>
+    </div>
+  )
+}
