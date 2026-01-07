@@ -267,7 +267,7 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
                   <th className="text-left py-2 px-3 font-semibold text-foreground sticky left-0 bg-muted/50">Cohort</th>
                   {columns.map((col) => (
                     <th key={col} className="text-right py-2 px-3 font-semibold text-foreground min-w-[80px]">
-                      Month {col}
+                      {col}
                     </th>
                   ))}
                 </tr>
