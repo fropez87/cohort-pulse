@@ -599,17 +599,11 @@ async def upload_file(file: UploadFile = File(...)):
     try:
         contents = await file.read()
 
-        # Debug: log first 200 bytes to diagnose encoding issues
-        raw_preview = contents[:200]
-
-        # Handle BOM and various encodings, normalize line endings
-        try:
-            decoded = contents.decode("utf-8-sig")
-        except UnicodeDecodeError:
-            decoded = contents.decode("utf-8", errors="ignore")
-
-        # Normalize line endings (Windows \r\n -> \n, Mac \r -> \n)
-        decoded = decoded.replace('\r\n', '\n').replace('\r', '\n')
+        # Debug info
+        content_len = len(contents)
+        first_100 = contents[:100].decode('utf-8', errors='replace')
+        has_newline = b'\n' in contents
+        has_cr = b'\r' in contents
 
         # Use BytesIO with original bytes - pandas handles encoding better
         df = pd.read_csv(io.BytesIO(contents), encoding='utf-8-sig')
@@ -649,7 +643,14 @@ async def upload_file(file: UploadFile = File(...)):
         }
 
     except Exception as e:
-        return {"error": str(e)}
+        # Include debug info in error response
+        debug_info = {
+            "content_len": content_len if 'content_len' in dir() else 'N/A',
+            "first_100": first_100 if 'first_100' in dir() else 'N/A',
+            "has_newline": has_newline if 'has_newline' in dir() else 'N/A',
+            "has_cr": has_cr if 'has_cr' in dir() else 'N/A',
+        }
+        return {"error": str(e), "debug": debug_info}
 
 
 class MatrixRequest(BaseModel):
@@ -680,4 +681,4 @@ async def get_cohort_matrix(request: MatrixRequest):
 
 # Handler for Vercel serverless
 handler = Mangum(app)
-# Version 2.4 - use BytesIO with utf-8-sig encoding for pandas
+# Version 2.5 - add debug info to error response
