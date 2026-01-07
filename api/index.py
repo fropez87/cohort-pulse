@@ -666,4 +666,4 @@ async def get_cohort_matrix(request: MatrixRequest):
 
 # Handler for Vercel serverless
 handler = Mangum(app)
-# Version 2.0 - insights for both retention and waterfall
+# Version 2.1 - force cache bust for healthcare insights
