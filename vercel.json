@@ -2,17 +2,17 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "framework": "vite",
-  "functions": {
-    "api/*.py": {
-      "runtime": "python3.9"
-    }
-  },
-  "rewrites": [
-    { "source": "/api/analyze", "destination": "/api/analyze.py" },
-    { "source": "/api/upload", "destination": "/api/upload.py" },
-    { "source": "/api/cohort-matrix", "destination": "/api/cohort-matrix.py" },
-    { "source": "/api/health", "destination": "/api/health.py" },
-    { "source": "/api/export", "destination": "/api/export.py" },
-    { "source": "/(.*)", "destination": "/index.html" }
+  "builds": [
+    { "src": "api/analyze.py", "use": "@vercel/python" },
+    { "src": "api/upload.py", "use": "@vercel/python" },
+    { "src": "api/cohort-matrix.py", "use": "@vercel/python" },
+    { "src": "api/health.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api/analyze", "dest": "api/analyze.py" },
+    { "src": "/api/upload", "dest": "api/upload.py" },
+    { "src": "/api/cohort-matrix", "dest": "api/cohort-matrix.py" },
+    { "src": "/api/health", "dest": "api/health.py" },
+    { "src": "/(.*)", "dest": "frontend/dist/$1" }
   ]
 }
