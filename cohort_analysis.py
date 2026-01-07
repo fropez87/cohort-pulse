@@ -446,12 +446,12 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
                         'text': f"Recent cohorts are {decline_pct:.0f}% smaller than earlier ones."
                     })
 
-        # Insight 4: LTV insight
+        # Insight 4: Lifetime revenue insight
         if metrics['ltv'] > 0:
             insights.append({
                 'type': 'info',
-                'title': 'Customer lifetime value',
-                'text': f"Average customer generates ${metrics['ltv']:.2f} in revenue over their lifetime."
+                'title': 'Lifetime Revenue',
+                'text': f"Average lifetime revenue per customer is ${metrics['ltv']:.2f}."
             })
 
         # Insight 5: Month 2+ retention (stickiness)

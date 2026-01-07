@@ -450,8 +450,8 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
         if metrics['ltv'] > 0:
             insights.append({
                 'type': 'info',
-                'title': 'Lifetime revenue',
-                'text': f"Average customer generates ${metrics['ltv']:.2f} in revenue over their lifetime."
+                'title': 'Lifetime Revenue',
+                'text': f"Average lifetime revenue per customer is ${metrics['ltv']:.2f}."
             })
 
         # Insight 5: Purchase frequency

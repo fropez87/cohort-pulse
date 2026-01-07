@@ -583,7 +583,7 @@ if uploaded_file is not None:
 
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Customer LTV", f"${advanced_metrics['ltv']:,.2f}")
+            st.metric("Lifetime Revenue", f"${advanced_metrics['ltv']:,.2f}")
         with col2:
             st.metric("Repeat Rate", f"{advanced_metrics['repeat_rate']:.1f}%")
 

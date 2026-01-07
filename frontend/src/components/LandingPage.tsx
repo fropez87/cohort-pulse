@@ -40,8 +40,8 @@ const analysisConfig = {
       },
       {
         icon: TrendingUp,
-        title: 'Revenue & LTV',
-        description: 'Track revenue retention, calculate customer lifetime value, and identify your best cohorts.',
+        title: 'Revenue & Lifetime Revenue',
+        description: 'Track revenue retention, calculate lifetime revenue per customer, and identify your best cohorts.',
       },
       {
         icon: Download,

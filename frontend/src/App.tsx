@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Header } from './components/Header'
 import { LandingPage, type AnalysisType } from './components/LandingPage'
-import { PayerMatrix } from './components/CohortHeatmap'
+import { PayerMatrix, type DisplayMode } from './components/CohortHeatmap'
 import { RetentionDashboard } from './components/RetentionDashboard'
 import { DashboardSkeleton } from './components/LoadingState'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
@@ -24,6 +24,7 @@ function App() {
   const [selectedServiceType, setSelectedServiceType] = useState<string>('')
   const [rowCount, setRowCount] = useState(0)
   const [rawData, setRawData] = useState<Array<Record<string, unknown>>>([])
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('dollars')
 
   // Retention state
   const [retentionData, setRetentionData] = useState<RetentionAnalysisResponse | null>(null)
@@ -160,6 +161,7 @@ function App() {
     setError(null)
     setRowCount(0)
     setRawData([])
+    setDisplayMode('dollars')
   }
 
   const handleExportCSV = () => {
@@ -256,7 +258,7 @@ function App() {
             {/* Filters */}
             <Card>
               <CardContent className="pt-6">
-                <div className="flex gap-4 flex-wrap">
+                <div className="flex gap-4 flex-wrap items-end">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm font-medium text-foreground">Payer</label>
                     <select
@@ -291,6 +293,31 @@ function App() {
                       ))}
                     </select>
                   </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-foreground">Display</label>
+                    <div className="flex gap-1 p-1 rounded-lg bg-muted">
+                      <button
+                        onClick={() => setDisplayMode('dollars')}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          displayMode === 'dollars'
+                            ? 'bg-white text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        $
+                      </button>
+                      <button
+                        onClick={() => setDisplayMode('percent')}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          displayMode === 'percent'
+                            ? 'bg-white text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        %
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -306,7 +333,7 @@ function App() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
                 ) : matrixData && matrixData.matrix.length > 0 ? (
-                  <PayerMatrix data={matrixData} />
+                  <PayerMatrix data={matrixData} displayMode={displayMode} />
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
                     No data available for the selected filters.

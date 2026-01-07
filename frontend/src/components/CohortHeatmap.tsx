@@ -1,11 +1,14 @@
 import { cn } from '../lib/utils'
 import type { CohortMatrixData } from '../types'
 
+export type DisplayMode = 'dollars' | 'percent'
+
 interface PayerMatrixProps {
   data: CohortMatrixData
+  displayMode?: DisplayMode
 }
 
-export function PayerMatrix({ data }: PayerMatrixProps) {
+export function PayerMatrix({ data, displayMode = 'dollars' }: PayerMatrixProps) {
   const { matrix, payment_months, totals } = data
 
   const formatCurrency = (value: number) => {
@@ -14,6 +17,15 @@ export function PayerMatrix({ data }: PayerMatrixProps) {
       return `(${Math.abs(Math.round(value)).toLocaleString()})`
     }
     return Math.round(value).toLocaleString()
+  }
+
+  const formatPercent = (payment: number, grossCharge: number) => {
+    if (grossCharge === 0 || Math.abs(payment) < 0.5) return ''
+    const pct = (payment / grossCharge) * 100
+    if (pct < 0) {
+      return `(${Math.abs(pct).toFixed(1)}%)`
+    }
+    return `${pct.toFixed(1)}%`
   }
 
   const getCellStyle = (value: number) => {
@@ -68,7 +80,9 @@ export function PayerMatrix({ data }: PayerMatrixProps) {
                     className="p-3 text-right text-sm border-b border-border whitespace-nowrap"
                     style={getCellStyle(value)}
                   >
-                    {formatCurrency(value)}
+                    {displayMode === 'percent'
+                      ? formatPercent(value, row.gross_charge)
+                      : formatCurrency(value)}
                   </td>
                 )
               })}
@@ -90,7 +104,9 @@ export function PayerMatrix({ data }: PayerMatrixProps) {
                   className="p-3 text-right text-sm border-border whitespace-nowrap"
                   style={getCellStyle(value)}
                 >
-                  {formatCurrency(value)}
+                  {displayMode === 'percent'
+                    ? formatPercent(value, totals.gross_charge)
+                    : formatCurrency(value)}
                 </td>
               )
             })}

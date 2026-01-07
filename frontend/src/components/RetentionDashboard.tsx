@@ -177,7 +177,7 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Customer LTV</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Lifetime Revenue</p>
             <p className="text-2xl font-bold text-foreground mt-1">{formatCurrency(metrics?.ltv || 0)}</p>
           </CardContent>
         </Card>
