@@ -31,12 +31,134 @@ def health_check():
     return {"status": "healthy"}
 
 
+def generate_waterfall_insights(df: pd.DataFrame) -> list:
+    """Generate insights for healthcare waterfall analysis. Always returns 6 insights."""
+    insights = []
+
+    try:
+        total_billed = df['billed_amount'].sum()
+        total_collected = df['amount_paid'].sum()
+        collection_rate = (total_collected / total_billed * 100) if total_billed > 0 else 0
+
+        # 1. Collection Rate
+        if collection_rate >= 90:
+            insights.append({
+                'type': 'positive',
+                'title': 'Excellent collection rate',
+                'text': f"Collecting {collection_rate:.1f}% of billed charges."
+            })
+        elif collection_rate >= 70:
+            insights.append({
+                'type': 'info',
+                'title': 'Collection rate',
+                'text': f"Collecting {collection_rate:.1f}% of billed charges."
+            })
+        else:
+            insights.append({
+                'type': 'warning',
+                'title': 'Low collection rate',
+                'text': f"Only collecting {collection_rate:.1f}% of billed charges."
+            })
+
+        # 2. Total Revenue
+        insights.append({
+            'type': 'info',
+            'title': 'Total collected',
+            'text': f"${total_collected:,.0f} collected from ${total_billed:,.0f} billed."
+        })
+
+        # 3. Average days to payment
+        df_copy = df.copy()
+        df_copy['days_to_pay'] = (df_copy['date_paid'] - df_copy['service_date']).dt.days
+        avg_days = df_copy['days_to_pay'].mean()
+        if avg_days <= 30:
+            insights.append({
+                'type': 'positive',
+                'title': 'Fast payments',
+                'text': f"Average {avg_days:.0f} days from service to payment."
+            })
+        elif avg_days <= 60:
+            insights.append({
+                'type': 'info',
+                'title': 'Payment timing',
+                'text': f"Average {avg_days:.0f} days from service to payment."
+            })
+        else:
+            insights.append({
+                'type': 'warning',
+                'title': 'Slow payments',
+                'text': f"Average {avg_days:.0f} days from service to payment."
+            })
+
+        # 4. Payer analysis
+        payer_totals = df.groupby('payer').agg({
+            'billed_amount': 'sum',
+            'amount_paid': 'sum'
+        })
+        payer_totals['rate'] = payer_totals['amount_paid'] / payer_totals['billed_amount'] * 100
+
+        best_payer = payer_totals['rate'].idxmax()
+        best_rate = payer_totals['rate'].max()
+        insights.append({
+            'type': 'positive',
+            'title': 'Top performing payer',
+            'text': f"{best_payer} has the highest collection rate at {best_rate:.1f}%."
+        })
+
+        # 5. Worst payer (if significantly different)
+        worst_payer = payer_totals['rate'].idxmin()
+        worst_rate = payer_totals['rate'].min()
+        if worst_rate < best_rate * 0.7:
+            insights.append({
+                'type': 'warning',
+                'title': 'Underperforming payer',
+                'text': f"{worst_payer} has the lowest collection rate at {worst_rate:.1f}%."
+            })
+        else:
+            # Service type mix
+            service_mix = df.groupby('service_type')['amount_paid'].sum()
+            top_service = service_mix.idxmax()
+            top_revenue = service_mix.max()
+            insights.append({
+                'type': 'info',
+                'title': 'Top service type',
+                'text': f"{top_service} generates the most revenue at ${top_revenue:,.0f}."
+            })
+
+        # 6. Claims volume
+        unique_claims = df['claim_id'].nunique()
+        insights.append({
+            'type': 'info',
+            'title': 'Claims processed',
+            'text': f"{unique_claims:,} unique claims analyzed."
+        })
+
+    except Exception:
+        pass
+
+    # Pad if needed
+    while len(insights) < 6:
+        insights.append({
+            'type': 'info',
+            'title': 'Revenue analysis',
+            'text': 'Track payment patterns across service months.'
+        })
+
+    return insights[:6]
+
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     global uploaded_data
 
     contents = await file.read()
     df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
+
+    # Handle comma-formatted numbers (e.g., "5,493.00" -> 5493.00)
+    if "billed_amount" in df.columns:
+        df["billed_amount"] = df["billed_amount"].replace(r'[\$,]', '', regex=True).astype(float)
+    if "amount_paid" in df.columns:
+        df["amount_paid"] = df["amount_paid"].replace(r'[\$,]', '', regex=True).astype(float)
 
     # Parse dates
     df["service_date"] = pd.to_datetime(df["service_date"])
@@ -48,13 +170,17 @@ async def upload_file(file: UploadFile = File(...)):
     payers = sorted(df["payer"].dropna().unique().tolist())
     service_types = sorted(df["service_type"].dropna().unique().tolist())
 
+    # Generate insights
+    insights = generate_waterfall_insights(df)
+
     return {
         "message": "File uploaded successfully",
         "rows": len(df),
         "filters": {
             "payers": payers,
             "service_types": service_types,
-        }
+        },
+        "insights": insights
     }
 
 

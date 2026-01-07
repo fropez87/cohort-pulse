@@ -364,7 +364,7 @@ def get_retention_curve(df: pd.DataFrame) -> pd.DataFrame:
 def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
                       metrics: dict = None, cohort_sizes: pd.DataFrame = None) -> list:
     """
-    Generate automatic insights from the cohort data.
+    Generate automatic insights from the cohort data. Always returns exactly 6 insights.
 
     Args:
         df: DataFrame with cohort data
@@ -373,7 +373,7 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
         cohort_sizes: Pre-calculated cohort sizes (optional)
 
     Returns:
-        List of insight dictionaries
+        List of 6 insight dictionaries
     """
     insights = []
 
@@ -384,7 +384,7 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
         if cohort_sizes is None:
             cohort_sizes = get_cohort_sizes(df)
 
-        # Insight 1: Repeat purchase rate
+        # GUARANTEED 1: Repeat purchase rate (always show)
         if metrics['repeat_rate'] >= 30:
             insights.append({
                 'type': 'positive',
@@ -397,56 +397,14 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
                 'title': 'Low repeat rate',
                 'text': f"Only {metrics['repeat_rate']:.1f}% of customers return. Consider retention strategies."
             })
+        else:
+            insights.append({
+                'type': 'info',
+                'title': 'Repeat purchase rate',
+                'text': f"{metrics['repeat_rate']:.1f}% of customers have made more than one purchase."
+            })
 
-        # Insight 2: Best performing cohort (Month 1 retention)
-        if 'Month 1' in retention_table.columns:
-            month1_retention = retention_table['Month 1'].dropna()
-            if len(month1_retention) > 1:  # Need at least 2 cohorts to compare
-                best_cohort = month1_retention.idxmax()
-                best_retention = month1_retention.max()
-                avg_retention = month1_retention.mean()
-
-                # Prevent division by zero
-                if avg_retention > 0 and best_retention > avg_retention * 1.2:
-                    insights.append({
-                        'type': 'positive',
-                        'title': 'Top performing cohort',
-                        'text': f"{best_cohort} cohort has {best_retention:.1f}% Month 1 retention, {((best_retention/avg_retention)-1)*100:.0f}% above average."
-                    })
-
-                # Worst cohort
-                worst_cohort = month1_retention.idxmin()
-                worst_retention = month1_retention.min()
-                if avg_retention > 0 and worst_retention < avg_retention * 0.8:
-                    insights.append({
-                        'type': 'warning',
-                        'title': 'Underperforming cohort',
-                        'text': f"{worst_cohort} cohort has only {worst_retention:.1f}% Month 1 retention."
-                    })
-
-        # Insight 3: Cohort size trend
-        if len(cohort_sizes) >= 6:  # Need enough cohorts to compare trends
-            recent_avg = cohort_sizes['new_customers'].tail(3).mean()
-            older_avg = cohort_sizes['new_customers'].head(3).mean()
-
-            # Prevent division by zero
-            if older_avg > 0:
-                if recent_avg > older_avg * 1.2:
-                    growth_pct = ((recent_avg / older_avg) - 1) * 100
-                    insights.append({
-                        'type': 'positive',
-                        'title': 'Growing customer acquisition',
-                        'text': f"Recent cohorts are {growth_pct:.0f}% larger than earlier ones."
-                    })
-                elif recent_avg < older_avg * 0.8:
-                    decline_pct = (1 - (recent_avg / older_avg)) * 100
-                    insights.append({
-                        'type': 'warning',
-                        'title': 'Declining acquisition',
-                        'text': f"Recent cohorts are {decline_pct:.0f}% smaller than earlier ones."
-                    })
-
-        # Insight 4: Lifetime revenue insight
+        # GUARANTEED 2: Lifetime revenue (always show)
         if metrics['ltv'] > 0:
             insights.append({
                 'type': 'info',
@@ -454,20 +412,118 @@ def generate_insights(df: pd.DataFrame, retention_table: pd.DataFrame,
                 'text': f"Average lifetime revenue per customer is ${metrics['ltv']:.2f}."
             })
 
-        # Insight 5: Month 2+ retention (stickiness)
+        # GUARANTEED 3: Average order value (always show)
+        if metrics['aov'] > 0:
+            insights.append({
+                'type': 'info',
+                'title': 'Average Order Value',
+                'text': f"Customers spend an average of ${metrics['aov']:.2f} per order."
+            })
+
+        # CONDITIONAL 4: Best performing cohort (Month 1 retention)
+        if 'Month 1' in retention_table.columns:
+            month1_retention = retention_table['Month 1'].dropna()
+            if len(month1_retention) > 1:
+                best_cohort = month1_retention.idxmax()
+                best_retention = month1_retention.max()
+                avg_retention = month1_retention.mean()
+
+                if avg_retention > 0 and best_retention > avg_retention * 1.1:
+                    insights.append({
+                        'type': 'positive',
+                        'title': 'Top performing cohort',
+                        'text': f"{best_cohort} cohort has {best_retention:.1f}% Month 1 retention, {((best_retention/avg_retention)-1)*100:.0f}% above average."
+                    })
+
+        # CONDITIONAL 5: Underperforming cohort
+        if 'Month 1' in retention_table.columns:
+            month1_retention = retention_table['Month 1'].dropna()
+            if len(month1_retention) > 1:
+                worst_cohort = month1_retention.idxmin()
+                worst_retention = month1_retention.min()
+                avg_retention = month1_retention.mean()
+                if avg_retention > 0 and worst_retention < avg_retention * 0.8:
+                    insights.append({
+                        'type': 'warning',
+                        'title': 'Underperforming cohort',
+                        'text': f"{worst_cohort} cohort has only {worst_retention:.1f}% Month 1 retention."
+                    })
+
+        # CONDITIONAL 6: Cohort size trend
+        if len(cohort_sizes) >= 3:
+            sizes = cohort_sizes['new_customers'].tolist()
+            recent_avg = sum(sizes[-3:]) / 3 if len(sizes) >= 3 else sum(sizes) / len(sizes)
+            earlier_avg = sum(sizes[:3]) / 3 if len(sizes) >= 3 else sum(sizes) / len(sizes)
+
+            if earlier_avg > 0:
+                change_pct = ((recent_avg - earlier_avg) / earlier_avg) * 100
+                if change_pct < -20:
+                    insights.append({
+                        'type': 'warning',
+                        'title': 'Declining acquisition',
+                        'text': f"Recent cohorts are {abs(change_pct):.0f}% smaller than earlier ones."
+                    })
+                elif change_pct > 20:
+                    insights.append({
+                        'type': 'positive',
+                        'title': 'Growing acquisition',
+                        'text': f"Recent cohorts are {change_pct:.0f}% larger than earlier ones."
+                    })
+
+        # CONDITIONAL 7: Month 2+ retention (stickiness)
         if 'Month 2' in retention_table.columns:
             month2_data = retention_table['Month 2'].dropna()
             if len(month2_data) > 0:
                 month2_avg = month2_data.mean()
-                if month2_avg >= 20:
+                if month2_avg >= 15:
                     insights.append({
                         'type': 'positive',
                         'title': 'Good long-term retention',
                         'text': f"Average {month2_avg:.1f}% of customers are still active by Month 2."
                     })
 
+        # CONDITIONAL 8: Early churn analysis
+        if 'Month 1' in retention_table.columns and 'Month 2' in retention_table.columns:
+            m1 = retention_table['Month 1'].dropna().mean()
+            m2 = retention_table['Month 2'].dropna().mean()
+            if m1 > 0 and m2 > 0:
+                dropoff = m1 - m2
+                if dropoff > 15:
+                    insights.append({
+                        'type': 'warning',
+                        'title': 'High early churn',
+                        'text': f"You lose {dropoff:.1f}% of customers between Month 1 and Month 2."
+                    })
+                elif dropoff < 5 and dropoff >= 0:
+                    insights.append({
+                        'type': 'positive',
+                        'title': 'Strong retention curve',
+                        'text': f"Only {dropoff:.1f}% drop-off between Month 1 and Month 2."
+                    })
+
     except Exception:
-        # If insight generation fails, return empty list rather than crashing
         pass
 
-    return insights[:5]  # Return top 5 insights
+    # Pad with generic insights if we don't have 6
+    while len(insights) < 6:
+        if len(insights) == 3:
+            total_customers = int(cohort_sizes['new_customers'].sum()) if len(cohort_sizes) > 0 else 0
+            insights.append({
+                'type': 'info',
+                'title': 'Customer base',
+                'text': f"Total of {total_customers:,} unique customers analyzed."
+            })
+        elif len(insights) == 4:
+            insights.append({
+                'type': 'info',
+                'title': 'Data coverage',
+                'text': f"Analysis includes {len(cohort_sizes)} monthly cohorts."
+            })
+        else:
+            insights.append({
+                'type': 'info',
+                'title': 'Retention tracking',
+                'text': "Monitor cohort behavior over time to identify trends."
+            })
+
+    return insights[:6]
