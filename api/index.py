@@ -598,14 +598,21 @@ async def upload_file(file: UploadFile = File(...)):
     """Upload and process a CSV file for payer waterfall analysis."""
     try:
         contents = await file.read()
+
+        # Debug: log first 200 bytes to diagnose encoding issues
+        raw_preview = contents[:200]
+
         # Handle BOM and various encodings, normalize line endings
         try:
             decoded = contents.decode("utf-8-sig")
         except UnicodeDecodeError:
             decoded = contents.decode("utf-8", errors="ignore")
-        # Normalize line endings (Windows \r\n -> \n)
+
+        # Normalize line endings (Windows \r\n -> \n, Mac \r -> \n)
         decoded = decoded.replace('\r\n', '\n').replace('\r', '\n')
-        df = pd.read_csv(io.StringIO(decoded))
+
+        # Use BytesIO with original bytes - pandas handles encoding better
+        df = pd.read_csv(io.BytesIO(contents), encoding='utf-8-sig')
 
         # Handle comma-formatted numbers (e.g., "5,493.00" -> 5493.00)
         if "billed_amount" in df.columns:
@@ -673,4 +680,4 @@ async def get_cohort_matrix(request: MatrixRequest):
 
 # Handler for Vercel serverless
 handler = Mangum(app)
-# Version 2.3 - fix line endings for healthcare CSV uploads
+# Version 2.4 - use BytesIO with utf-8-sig encoding for pandas
