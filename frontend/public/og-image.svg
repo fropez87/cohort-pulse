@@ -1,0 +1,29 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background -->
+  <rect width="1200" height="630" fill="#111827"/>
+
+  <!-- Subtle grid pattern -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1f2937" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grid)" opacity="0.5"/>
+
+  <!-- Logo icon (bar chart) -->
+  <g transform="translate(500, 180)">
+    <rect width="200" height="200" rx="32" fill="#10b981"/>
+    <rect x="32" y="120" width="36" height="56" rx="6" fill="white"/>
+    <rect x="82" y="80" width="36" height="96" rx="6" fill="white"/>
+    <rect x="132" y="40" width="36" height="136" rx="6" fill="white"/>
+  </g>
+
+  <!-- Title -->
+  <text x="600" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="white" text-anchor="middle">Cohort Pulse</text>
+
+  <!-- Tagline -->
+  <text x="600" y="500" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#9ca3af" text-anchor="middle">Customer Retention Analytics</text>
+
+  <!-- Accent line -->
+  <rect x="450" y="530" width="300" height="4" rx="2" fill="#10b981"/>
+</svg>
