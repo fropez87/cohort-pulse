@@ -148,7 +148,7 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
                 "flex items-center gap-3 px-6 py-4 rounded-xl text-base font-semibold transition-all duration-200 border-2",
                 analysisType === 'retention'
                   ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25 scale-[1.02]"
-                  : "bg-white text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:shadow-md"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:shadow-md"
               )}
             >
               <Building2 className={cn("h-5 w-5", analysisType === 'retention' ? "text-primary-foreground" : "text-primary")} />
@@ -165,7 +165,7 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
                 "flex items-center gap-3 px-6 py-4 rounded-xl text-base font-semibold transition-all duration-200 border-2",
                 analysisType === 'waterfall'
                   ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25 scale-[1.02]"
-                  : "bg-white text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:shadow-md"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:shadow-md"
               )}
             >
               <Stethoscope className={cn("h-5 w-5", analysisType === 'waterfall' ? "text-primary-foreground" : "text-primary")} />
@@ -322,7 +322,7 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
                         className={cn(
                           "py-2 px-3 font-semibold text-foreground",
                           index === 0 ? "text-left" : "text-right",
-                          analysisType === 'waterfall' && index === 1 && "bg-blue-50"
+                          analysisType === 'waterfall' && index === 1 && "bg-primary/10"
                         )}
                       >
                         {header}
@@ -333,7 +333,7 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
                 <tbody>
                   {analysisType === 'retention' ? (
                     config.sampleOutput.rows.map((row: any, index: number) => (
-                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                      <tr key={index} className={index % 2 === 0 ? 'bg-card' : 'bg-muted/50'}>
                         <td className="py-2 px-3 font-medium">{row.cohort}</td>
                         <td className="py-2 px-3 text-right">{row.size}</td>
                         <td className="py-2 px-3 text-right">{row.m0}</td>
@@ -345,9 +345,9 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
                   ) : (
                     <>
                       {config.sampleOutput.rows.map((row: any, index: number) => (
-                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                        <tr key={index} className={index % 2 === 0 ? 'bg-card' : 'bg-muted/50'}>
                           <td className="py-2 px-3 font-medium">{row.dos}</td>
-                          <td className="py-2 px-3 text-right bg-blue-50/50 font-semibold">{row.gross}</td>
+                          <td className="py-2 px-3 text-right bg-primary/10/50 font-semibold">{row.gross}</td>
                           <td className="py-2 px-3 text-right">{row.m1}</td>
                           <td className="py-2 px-3 text-right">{row.m2}</td>
                           <td className="py-2 px-3 text-right">{row.m3}</td>
@@ -356,7 +356,7 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
                       {(config.sampleOutput as any).totals && (
                         <tr className="bg-muted font-bold border-t-2">
                           <td className="py-2 px-3">{(config.sampleOutput as any).totals.label}</td>
-                          <td className="py-2 px-3 text-right bg-blue-100">{(config.sampleOutput as any).totals.gross}</td>
+                          <td className="py-2 px-3 text-right bg-primary/20">{(config.sampleOutput as any).totals.gross}</td>
                           <td className="py-2 px-3 text-right">{(config.sampleOutput as any).totals.m1}</td>
                           <td className="py-2 px-3 text-right">{(config.sampleOutput as any).totals.m2}</td>
                           <td className="py-2 px-3 text-right">{(config.sampleOutput as any).totals.m3}</td>
@@ -397,7 +397,7 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
       <footer className="border-t border-border pt-8">
         <div className="max-w-3xl mx-auto text-center space-y-4">
           <div className="text-xs text-muted-foreground/70 space-y-3">
-            <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-800">
+            <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
               <p className="font-semibold mb-1">Important Privacy & Compliance Notice</p>
               <p>
                 Do NOT upload files containing Personally Identifiable Information (PII), Protected Health Information (PHI),
@@ -425,7 +425,7 @@ export function LandingPage({ onFileSelect, isLoading, error }: LandingPageProps
 
 function FeatureCard({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) {
   return (
-    <Card className="bg-white/50 hover:bg-white/80 transition-colors">
+    <Card className="bg-card/50 hover:bg-card/80 transition-colors">
       <CardContent className="p-6">
         <div className="p-2 rounded-lg bg-primary/10 w-fit mb-4">
           <Icon className="h-5 w-5 text-primary" />

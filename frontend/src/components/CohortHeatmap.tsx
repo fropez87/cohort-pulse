@@ -44,7 +44,7 @@ export function PayerMatrix({ data, displayMode = 'dollars' }: PayerMatrixProps)
             <th className="sticky left-0 z-10 bg-muted p-3 text-left text-xs font-semibold text-foreground border-b border-r border-border whitespace-nowrap">
               DOS Month
             </th>
-            <th className="p-3 text-right text-xs font-semibold text-foreground border-b border-r border-border whitespace-nowrap bg-blue-50">
+            <th className="p-3 text-right text-xs font-semibold text-foreground border-b border-r border-border whitespace-nowrap bg-primary/10">
               Gross Charge
             </th>
             {payment_months.map(month => (
@@ -63,13 +63,13 @@ export function PayerMatrix({ data, displayMode = 'dollars' }: PayerMatrixProps)
               key={row.dos_month}
               className={cn(
                 "hover:bg-muted/50 transition-colors",
-                rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                rowIndex % 2 === 0 ? "bg-card" : "bg-muted/30"
               )}
             >
               <td className="sticky left-0 z-10 p-3 text-sm font-medium text-foreground border-b border-r border-border whitespace-nowrap bg-inherit">
                 {row.dos_month}
               </td>
-              <td className="p-3 text-right text-sm border-b border-r border-border whitespace-nowrap bg-blue-50/50 font-semibold">
+              <td className="p-3 text-right text-sm border-b border-r border-border whitespace-nowrap bg-primary/5 font-semibold">
                 {formatCurrency(row.gross_charge)}
               </td>
               {payment_months.map(month => {
@@ -93,7 +93,7 @@ export function PayerMatrix({ data, displayMode = 'dollars' }: PayerMatrixProps)
             <td className="sticky left-0 z-10 bg-muted p-3 text-sm font-bold text-foreground border-r border-border whitespace-nowrap">
               Grand Totals
             </td>
-            <td className="p-3 text-right text-sm border-r border-border whitespace-nowrap bg-blue-100">
+            <td className="p-3 text-right text-sm border-r border-border whitespace-nowrap bg-primary/20">
               {formatCurrency(totals.gross_charge)}
             </td>
             {payment_months.map(month => {

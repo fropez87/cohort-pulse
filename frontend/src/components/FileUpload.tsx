@@ -30,7 +30,7 @@ export function FileUpload({ onFileSelect, isLoading, columnChips = [] }: FileUp
       {...getRootProps()}
       className={cn(
         "relative cursor-pointer rounded-lg border-2 border-dashed transition-all duration-150",
-        "p-12 text-center bg-white",
+        "p-12 text-center bg-card",
         isDragActive
           ? "border-primary bg-primary/5"
           : "border-border hover:border-muted-foreground/50",

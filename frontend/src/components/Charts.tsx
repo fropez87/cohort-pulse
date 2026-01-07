@@ -11,8 +11,10 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 
-// Teal accent color matching our design system
-const ACCENT_COLOR = '#2a9d8f'
+// Emerald accent color matching our dark design system
+const ACCENT_COLOR = '#10b981'
+const GRID_COLOR = 'rgba(255,255,255,0.08)'
+const TEXT_COLOR = '#737373'
 
 interface RetentionCurveProps {
   data: Array<{ month: number; retention: number }>
@@ -27,28 +29,29 @@ export function RetentionCurve({ data }: RetentionCurveProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 12, fill: '#6b7280' }}
+              tick={{ fontSize: 12, fill: TEXT_COLOR }}
               tickLine={false}
-              axisLine={{ stroke: '#e5e7eb' }}
-              label={{ value: 'Month', position: 'bottom', offset: -5, fontSize: 12, fill: '#6b7280' }}
+              axisLine={{ stroke: GRID_COLOR }}
+              label={{ value: 'Month', position: 'bottom', offset: -5, fontSize: 12, fill: TEXT_COLOR }}
             />
             <YAxis
               domain={[0, 100]}
-              tick={{ fontSize: 12, fill: '#6b7280' }}
+              tick={{ fontSize: 12, fill: TEXT_COLOR }}
               tickLine={false}
-              axisLine={{ stroke: '#e5e7eb' }}
-              label={{ value: 'Retention %', angle: -90, position: 'insideLeft', fontSize: 12, fill: '#6b7280' }}
+              axisLine={{ stroke: GRID_COLOR }}
+              label={{ value: 'Retention %', angle: -90, position: 'insideLeft', fontSize: 12, fill: TEXT_COLOR }}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
+                backgroundColor: '#1a1a1a',
+                border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '6px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
                 fontSize: '14px',
+                color: '#fafafa',
               }}
               formatter={(value) => [`${Number(value).toFixed(1)}%`, 'Retention']}
               labelFormatter={(label) => `Month ${label}`}
@@ -83,28 +86,29 @@ export function CohortSizeChart({ data }: CohortSizeChartProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
             <XAxis
               dataKey="cohort_month"
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 11, fill: TEXT_COLOR }}
               tickLine={false}
-              axisLine={{ stroke: '#e5e7eb' }}
+              axisLine={{ stroke: GRID_COLOR }}
               angle={-45}
               textAnchor="end"
               height={60}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: '#6b7280' }}
+              tick={{ fontSize: 12, fill: TEXT_COLOR }}
               tickLine={false}
-              axisLine={{ stroke: '#e5e7eb' }}
+              axisLine={{ stroke: GRID_COLOR }}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
+                backgroundColor: '#1a1a1a',
+                border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '6px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
                 fontSize: '14px',
+                color: '#fafafa',
               }}
               formatter={(value) => [Number(value).toLocaleString(), 'New Customers']}
               labelFormatter={(label) => `Cohort: ${label}`}

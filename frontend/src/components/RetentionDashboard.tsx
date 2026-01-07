@@ -218,9 +218,9 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
                 <div
                   key={index}
                   className={`p-4 rounded-lg border-l-4 ${
-                    insight.type === 'positive' ? 'border-l-green-500 bg-green-50' :
-                    insight.type === 'warning' ? 'border-l-yellow-500 bg-yellow-50' :
-                    'border-l-primary bg-primary/5'
+                    insight.type === 'positive' ? 'border-l-green-500 bg-green-500/10' :
+                    insight.type === 'warning' ? 'border-l-yellow-500 bg-yellow-500/10' :
+                    'border-l-primary bg-primary/10'
                   }`}
                 >
                   <p className="font-semibold text-foreground">{insight.title}</p>
@@ -249,7 +249,7 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
                   onClick={() => setActiveTable(tab.key as TableType)}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     activeTable === tab.key
-                      ? 'bg-white text-foreground shadow-sm'
+                      ? 'bg-card text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -276,7 +276,7 @@ export function RetentionDashboard({ data, onReset }: RetentionDashboardProps) {
                 {cohorts.map((cohort, rowIndex) => {
                   const rowData = currentTable?.[cohort] as Record<string, number> | undefined
                   return (
-                    <tr key={cohort} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                    <tr key={cohort} className={rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'}>
                       <td className="py-2 px-3 font-medium sticky left-0 bg-inherit">{cohort}</td>
                       {columns.map((col) => {
                         const value = rowData?.[col]
