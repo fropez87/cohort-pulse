@@ -295,28 +295,14 @@ function App() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm font-medium text-foreground">Display</label>
-                    <div className="flex gap-1 p-1 rounded-lg bg-muted">
-                      <button
-                        onClick={() => setDisplayMode('dollars')}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          displayMode === 'dollars'
-                            ? 'bg-white text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        $
-                      </button>
-                      <button
-                        onClick={() => setDisplayMode('percent')}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          displayMode === 'percent'
-                            ? 'bg-white text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        %
-                      </button>
-                    </div>
+                    <select
+                      value={displayMode}
+                      onChange={(e) => setDisplayMode(e.target.value as DisplayMode)}
+                      className="px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm min-w-[140px]"
+                    >
+                      <option value="dollars">Dollars ($)</option>
+                      <option value="percent">Percent (%)</option>
+                    </select>
                   </div>
                 </div>
               </CardContent>
