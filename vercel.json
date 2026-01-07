@@ -1,18 +1,8 @@
 {
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
-  "framework": "vite",
-  "builds": [
-    { "src": "api/analyze.py", "use": "@vercel/python" },
-    { "src": "api/upload.py", "use": "@vercel/python" },
-    { "src": "api/cohort-matrix.py", "use": "@vercel/python" },
-    { "src": "api/health.py", "use": "@vercel/python" }
-  ],
-  "routes": [
-    { "src": "/api/analyze", "dest": "api/analyze.py" },
-    { "src": "/api/upload", "dest": "api/upload.py" },
-    { "src": "/api/cohort-matrix", "dest": "api/cohort-matrix.py" },
-    { "src": "/api/health", "dest": "api/health.py" },
-    { "src": "/(.*)", "dest": "frontend/dist/$1" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
