@@ -1,16 +1,19 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "functions": {
-    "api/*.py": {
-      "runtime": "python3.12"
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
-  },
-  "rewrites": [
-    { "source": "/api/health", "destination": "/api/index.py" },
-    { "source": "/api/analyze", "destination": "/api/index.py" },
-    { "source": "/api/upload", "destination": "/api/index.py" },
-    { "source": "/api/cohort-matrix", "destination": "/api/index.py" },
-    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/(.*)", "dest": "/frontend/$1" }
   ]
 }
